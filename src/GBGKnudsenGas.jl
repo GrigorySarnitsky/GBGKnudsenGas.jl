@@ -1,6 +1,7 @@
 module GBGKnudsenGas
 
-export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, collide_with_body, get_initial_particle_state
+export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, IsotropicHelicoidDynamic, CompoundBody, CompoundBodyDynamic,
+  collide_with_body, get_initial_particle_state
 
 using StaticArrays
 using LinearAlgebra
@@ -13,14 +14,14 @@ end
 
 abstract type Body end
 
-collide_with_body(::Particle, ::Body) = error("No collide_with_body defined for this body")
+collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
 
 struct Sphere <: Body
   x::SVector{3, Float64}
   r::Float64
 end
 
-function collide_with_body(particle::Particle, sphere::Sphere)
+function collide_with_body(particle::Particle, sphere::Sphere)::Union{Nothing, Particle}
   Δx = particle.x - sphere.x
   Δx², v² = Δx ⋅ Δx, particle.v ⋅ particle.v
   b = particle.v ⋅ Δx
@@ -31,8 +32,7 @@ function collide_with_body(particle::Particle, sphere::Sphere)
   time_to_collision = (-b - √d) / v²
   x_at_collision  = particle.x + particle.v * time_to_collision
   Δx_at_collision = x_at_collision - sphere.x
-  # heck performance by changing Δx_at_collision ⋅ Δx_at_collision to sphere.r^2
-  v_after_collision = particle.v - 2 * Δx_at_collision * (particle.v ⋅ Δx_at_collision) / (Δx_at_collision ⋅ Δx_at_collision)
+  v_after_collision = particle.v - 2 * Δx_at_collision * (particle.v ⋅ Δx_at_collision) / sphere.r^2
   
   return Particle(particle.t + time_to_collision, x_at_collision, v_after_collision)
 end
@@ -43,7 +43,7 @@ struct CylinderSideWall <: Body
   r  ::Float64
 end
 
-function collide_with_body(particle::Particle, cylinder::CylinderSideWall)
+function collide_with_body(particle::Particle, cylinder::CylinderSideWall)::Union{Nothing, Particle}
   Δx = particle.x - cylinder.x_1
   x_2_1 = cylinder.x_2 - cylinder.x_1
   x_2_1² = x_2_1 ⋅ x_2_1
@@ -62,32 +62,50 @@ function collide_with_body(particle::Particle, cylinder::CylinderSideWall)
   if !(0 < Δx_at_collision ⋅ x_2_1 < x_2_1²) return nothing end
 
   Δx_⊥_at_collision = Δx_at_collision - (Δx_at_collision ⋅ x_2_1) / x_2_1² * x_2_1
-  # check performance by changing Δx_⊥_at_collision ⋅ Δx_⊥_at_collision to cylinder.r^2
-  v_after_collision = particle.v - 2 * Δx_⊥_at_collision * (particle.v ⋅ Δx_⊥_at_collision) / (Δx_⊥_at_collision ⋅ Δx_⊥_at_collision)
+  v_after_collision = particle.v - 2 * Δx_⊥_at_collision * (particle.v ⋅ Δx_⊥_at_collision) / cylinder.r^2
   
   return Particle(particle.t + time_to_collision, x_at_collision, v_after_collision)
 end
 
-struct CompoundBody <: Body
+struct CompoundBodyDynamic <: Body
   bodies::Array{Body, 1}
 end
 
+function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)::Union{Nothing, Particle}
+  nearest_collision_particle::Union{Nothing, Particle} = nothing
+  nearest_collision_t::Float64 = Inf
+  for body in compound_body.bodies
+    collided_particle = collide_with_body(particle, body)
+    if collided_particle !== nothing && collided_particle.t < nearest_collision_t
+      nearest_collision_t = collided_particle.t
+      nearest_collision_particle = collided_particle
+    end
+  end
+  return nearest_collision_particle
+end
+
+struct CompoundBody{T<:Tuple{Vararg{<:Body}}} <: Body
+  bodies::T
+end
+
+CompoundBody(bodies::Vararg{<:Body}) = CompoundBody(bodies)
+CompoundBody(bodies::AbstractVector{<:Body}) = CompoundBody(Tuple(bodies))
+
+function earlier(a::Union{Nothing, Particle}, b::Union{Nothing, Particle})
+  a === nothing && return b
+  b === nothing && return a
+  return a.t <= b.t ? a : b
+end
+
+earliest_collision(::Particle, ::Tuple{}) = nothing
+function earliest_collision(particle::Particle, bodies::Tuple)
+  first_collision = collide_with_body(particle, first(bodies))
+  rest_collision  = earliest_collision(particle, Base.tail(bodies))
+  return earlier(first_collision, rest_collision)
+end
+
 function collide_with_body(particle::Particle, compound_body::CompoundBody)
-  # change to a loop later
-  # best_particle = nothing
-  # best_t = Inf
-  # for body in compound_body.bodies
-  #   p′ = collide_with_body(particle, body)
-  #   if p′ !== nothing && p′.t < best_t
-  #     best_t = p′.t
-  #     best_particle = p′
-  #   end
-  # end
-  # return best_particle
-  
-  collisions = filter(!isnothing, [collide_with_body(particle, body) for body in compound_body.bodies])
-  if isempty(collisions) return nothing end
-  return collisions[argmin(p.t for p in collisions)]
+  return earliest_collision(particle, compound_body.bodies)
 end
 
 struct IsotropicHelicoid <: Body
@@ -96,23 +114,47 @@ struct IsotropicHelicoid <: Body
   elements::CompoundBody
 end
 
-IsotropicHelicoid(l, r) = IsotropicHelicoid(l, r,
-  CompoundBody([
-    CompoundBody([CylinderSideWall(SA[ 1,  2,  3]/6*l, SA[ 2,  1, -3]/6*l, r), Sphere(SA[ 1,  2,  3]/6*l, r), Sphere(SA[ 2,  1, -3]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[-2,  1,  3]/6*l, SA[-1,  2, -3]/6*l, r), Sphere(SA[-2,  1,  3]/6*l, r), Sphere(SA[-1,  2, -3]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[-1, -2,  3]/6*l, SA[-2, -1, -3]/6*l, r), Sphere(SA[-1, -2,  3]/6*l, r), Sphere(SA[-2, -1, -3]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 2, -1,  3]/6*l, SA[ 1, -2, -3]/6*l, r), Sphere(SA[ 2, -1,  3]/6*l, r), Sphere(SA[ 1, -2, -3]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 2,  3,  1]/6*l, SA[ 1, -3,  2]/6*l, r), Sphere(SA[ 2,  3,  1]/6*l, r), Sphere(SA[ 1, -3,  2]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[-1,  3,  2]/6*l, SA[-2, -3,  1]/6*l, r), Sphere(SA[-1,  3,  2]/6*l, r), Sphere(SA[-2, -3,  1]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 1,  3, -2]/6*l, SA[ 2, -3, -1]/6*l, r), Sphere(SA[ 1,  3, -2]/6*l, r), Sphere(SA[ 2, -3, -1]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[-2,  3, -1]/6*l, SA[-1, -3, -2]/6*l, r), Sphere(SA[-2,  3, -1]/6*l, r), Sphere(SA[-1, -3, -2]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 3,  1,  2]/6*l, SA[-3,  2,  1]/6*l, r), Sphere(SA[ 3,  1,  2]/6*l, r), Sphere(SA[-3,  2,  1]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 3, -2,  1]/6*l, SA[-3, -1,  2]/6*l, r), Sphere(SA[ 3, -2,  1]/6*l, r), Sphere(SA[-3, -1,  2]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 3, -1, -2]/6*l, SA[-3, -2, -1]/6*l, r), Sphere(SA[ 3, -1, -2]/6*l, r), Sphere(SA[-3, -2, -1]/6*l, r)]),
-    CompoundBody([CylinderSideWall(SA[ 3,  2, -1]/6*l, SA[-3,  1, -2]/6*l, r), Sphere(SA[ 3,  2, -1]/6*l, r), Sphere(SA[-3,  1, -2]/6*l, r)]),
-  ]))
+IsotropicHelicoid(cube_side_length, r) = IsotropicHelicoid(cube_side_length, r,
+  CompoundBody(
+    CompoundBody(
+      CylinderSideWall(SA[ 1,  2,  3] / 6 * cube_side_length, SA[ 2,  1, -3 ]/ 6 * cube_side_length, r),
+      Sphere(SA[ 1,  2,  3] / 6 * cube_side_length, r), Sphere(SA[ 2,  1, -3] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[-2,  1,  3] / 6 * cube_side_length, SA[-1,  2, -3] / 6 * cube_side_length, r),
+      Sphere(SA[-2,  1,  3] / 6 * cube_side_length, r), Sphere(SA[-1,  2, -3] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[-1, -2,  3] / 6 * cube_side_length, SA[-2, -1, -3] / 6 * cube_side_length, r),
+      Sphere(SA[-1, -2,  3] / 6 * cube_side_length, r), Sphere(SA[-2, -1, -3] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 2, -1,  3] / 6 * cube_side_length, SA[ 1, -2, -3] / 6 * cube_side_length, r),
+      Sphere(SA[ 2, -1,  3] / 6 * cube_side_length, r), Sphere(SA[ 1, -2, -3] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 2,  3,  1] / 6 * cube_side_length, SA[ 1, -3,  2] / 6 * cube_side_length, r),
+      Sphere(SA[ 2,  3,  1] / 6 * cube_side_length, r), Sphere(SA[ 1, -3,  2] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[-1,  3,  2] / 6 * cube_side_length, SA[-2, -3,  1] / 6 * cube_side_length, r),
+      Sphere(SA[-1,  3,  2] / 6 * cube_side_length, r), Sphere(SA[-2, -3,  1] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 1,  3, -2] / 6 * cube_side_length, SA[ 2, -3, -1] / 6 * cube_side_length, r),
+      Sphere(SA[ 1,  3, -2] / 6 * cube_side_length, r), Sphere(SA[ 2, -3, -1] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[-2,  3, -1] / 6 * cube_side_length, SA[-1, -3, -2] / 6 * cube_side_length, r),
+      Sphere(SA[-2,  3, -1] / 6 * cube_side_length, r), Sphere(SA[-1, -3, -2] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 3,  1,  2] / 6 * cube_side_length, SA[-3,  2,  1] / 6 * cube_side_length, r),
+      Sphere(SA[ 3,  1,  2] / 6 * cube_side_length, r), Sphere(SA[-3,  2,  1] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 3, -2,  1] / 6 * cube_side_length, SA[-3, -1,  2] / 6 * cube_side_length, r),
+      Sphere(SA[ 3, -2,  1] / 6 * cube_side_length, r), Sphere(SA[-3, -1,  2] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 3, -1, -2] / 6 * cube_side_length, SA[-3, -2, -1] / 6 * cube_side_length, r),
+      Sphere(SA[ 3, -1, -2] / 6 * cube_side_length, r), Sphere(SA[-3, -2, -1] / 6 * cube_side_length, r)),
+    CompoundBody(
+      CylinderSideWall(SA[ 3,  2, -1] / 6 * cube_side_length, SA[-3,  1, -2] / 6 * cube_side_length, r),
+      Sphere(SA[ 3,  2, -1] / 6 * cube_side_length, r), Sphere(SA[-3,  1, -2] / 6 * cube_side_length, r)),
+  ))
 
-function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)
+function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)::Union{Nothing, Particle}
   return collide_with_body(particle, helicoid.elements)
 end
 
