@@ -1,6 +1,6 @@
 module GBGKnudsenGas
 
-export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, IsotropicHelicoidDynamic, CompoundBody, CompoundBodyDynamic,
+export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, CompoundBodyDynamic,
   collide_with_body, get_initial_particle_state
 
 using StaticArrays
