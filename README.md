@@ -9,11 +9,14 @@
 Simulate Knudsen flow of particles past a body, in the Knudsen regime.
 
 
-<a id='API'></a>
+<a id='API-Reference'></a>
 
-<a id='API-1'></a>
+<a id='API-Reference-1'></a>
 
-## API
+## API Reference
+
+
+Below is the API reference generated from the docstrings
 
 <a id='GBGKnudsenGas.GBGKnudsenGas' href='#GBGKnudsenGas.GBGKnudsenGas'>#</a>
 **`GBGKnudsenGas.GBGKnudsenGas`** &mdash; *Module*.
@@ -33,7 +36,7 @@ An example demonstrating a complete flow simulation around a special body (an is
 Currently, all particle–body collisions are assumed to be specular.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/9d737f4cd1b18def253d15c41166bceba5550a6b/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/965cf13a670a349aa209056a4d3616e77536e1e1/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Particle' href='#GBGKnudsenGas.Particle'>#</a>
 **`GBGKnudsenGas.Particle`** &mdash; *Type*.
@@ -47,17 +50,19 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/9d737f4cd1b18def253d15c41166bceba5550a6b/src/GBGKnudsenGas.jl#L20-L24' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/965cf13a670a349aa209056a4d3616e77536e1e1/src/GBGKnudsenGas.jl#L20-L24' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
 
 
 
+```julia
 Sphere(x::SVector{3, Float64}, x::Float64)
+```
 
-Sphere centered at position `x` of radius `r`.
+Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/9d737f4cd1b18def253d15c41166bceba5550a6b/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/965cf13a670a349aa209056a4d3616e77536e1e1/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
 

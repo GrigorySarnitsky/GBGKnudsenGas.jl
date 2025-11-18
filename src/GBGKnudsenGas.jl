@@ -33,9 +33,9 @@ abstract type Body end
 collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
 
 """
-  Sphere(x::SVector{3, Float64}, x::Float64)
+    Sphere(x::SVector{3, Float64}, x::Float64)
 
-Sphere centered at position `x` of radius `r`.
+Sphere of radius `r` centered at point `x`.
 """
 struct Sphere <: Body
   x::SVector{3, Float64}
