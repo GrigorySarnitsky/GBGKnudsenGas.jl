@@ -66,6 +66,8 @@ Particle
 Body
 Sphere
 CylinderSideWall
+CompoundBody
+CompoundBodyDynamic
 ```
 
 ### Functions

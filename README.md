@@ -125,7 +125,7 @@ An example demonstrating a complete flow simulation around a special body (isotr
 Currently, all particle–body collisions are assumed to be specular.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
 
 
 <a id='Types'></a>
@@ -146,7 +146,7 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Body' href='#GBGKnudsenGas.Body'>#</a>
 **`GBGKnudsenGas.Body`** &mdash; *Type*.
@@ -160,7 +160,7 @@ Body
 Abstract supertype for all bodies that can interact with a `Particle` via `collide_with_body(::Particle, ::Body)`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
@@ -175,7 +175,7 @@ Sphere(x::SVector{3, Float64}, x::Float64)
 Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CylinderSideWall' href='#GBGKnudsenGas.CylinderSideWall'>#</a>
 **`GBGKnudsenGas.CylinderSideWall`** &mdash; *Type*.
@@ -192,7 +192,50 @@ Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radiu
 Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
+
+<a id='GBGKnudsenGas.CompoundBody' href='#GBGKnudsenGas.CompoundBody'>#</a>
+**`GBGKnudsenGas.CompoundBody`** &mdash; *Type*.
+
+
+
+```julia
+CompoundBody <: Body
+CompoundBody{T<:Tuple{Vararg{<:Body}}}
+```
+
+A compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
+
+This type should be default choice for representing compound bodies as it is usually faster.
+
+Use the convenience constructors
+
+```
+CompoundBody(b_1, b_2, b_3, ...)
+CompoundBody(bodies::AbstractVector{<:Body})
+```
+
+to build instances.
+
+
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L146-L160' class='documenter-source'>source</a><br>
+
+<a id='GBGKnudsenGas.CompoundBodyDynamic' href='#GBGKnudsenGas.CompoundBodyDynamic'>#</a>
+**`GBGKnudsenGas.CompoundBodyDynamic`** &mdash; *Type*.
+
+
+
+```julia
+CompoundBodyDynamic <: Body
+CompoundBodyDynamic(bodies::Array{Body, 1})
+```
+
+A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
+
+This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
+
+
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L121-L128' class='documenter-source'>source</a><br>
 
 
 <a id='Functions'></a>
@@ -215,5 +258,5 @@ Compute the next collision of `particle` with `body`, assuming straight-line mot
 Return a new `Particle` located at the collision point, with updated velocity (after collision) and time, or `nothing` if there is no collision.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b7d6e174464e2a0796d8af7bf548677dc3acbe6d/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
 

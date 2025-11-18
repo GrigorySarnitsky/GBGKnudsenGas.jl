@@ -117,6 +117,15 @@ function collide_with_body(particle::Particle, cylinder::CylinderSideWall)::Unio
   return Particle(v_after_collision, x_at_collision, particle.t + time_to_collision)
 end
 
+
+"""
+    CompoundBodyDynamic <: Body
+    CompoundBodyDynamic(bodies::Array{Body, 1})
+
+A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
+
+This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
+"""
 struct CompoundBodyDynamic <: Body
   bodies::Array{Body, 1}
 end
@@ -134,6 +143,21 @@ function collide_with_body(particle::Particle, compound_body::CompoundBodyDynami
   return nearest_collision_particle
 end
 
+"""
+    CompoundBody <: Body
+    CompoundBody{T<:Tuple{Vararg{<:Body}}}
+
+A compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
+
+This type should be default choice for representing compound bodies as it is usually faster.
+
+Use the convenience constructors
+
+    CompoundBody(b_1, b_2, b_3, ...)
+    CompoundBody(bodies::AbstractVector{<:Body})
+
+to build instances.
+"""
 struct CompoundBody{T<:Tuple{Vararg{<:Body}}} <: Body
   bodies::T
 end
