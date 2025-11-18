@@ -53,6 +53,30 @@ using GBGKnudsenGas
 ```
 
 
+<a id='Extending-the-library'></a>
+
+<a id='Extending-the-library-1'></a>
+
+## Extending the library
+
+
+One can add other types of bodies. For that one needs to define the body-type, e.g. `Elipsoid` and implement the respective `collide_with_body` function,
+
+
+```julia
+collide_with_body(particle::Particle, elipsoid::Elipsoid)::Union{Nothing, Particle}
+```
+
+
+Existing implementation for `Sphere` can be used for reference.
+
+
+As for non-specular collisions, I envision the following architecture. Each body type is extended with a property, `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
+
+
+Currently, I haven't thought of adding arbitrary meshes for bodies, but that would be a valuable feature to have.
+
+
 <a id='API-Reference'></a>
 
 <a id='API-Reference-1'></a>
@@ -80,7 +104,7 @@ An example demonstrating a complete flow simulation around a special body (isotr
 Currently, all particle–body collisions are assumed to be specular.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/163a338537b961adaf80367d8be47b4bff9b382e/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/c5bd17bda54b530adc8489e34cccf745ac95941b/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Body' href='#GBGKnudsenGas.Body'>#</a>
 **`GBGKnudsenGas.Body`** &mdash; *Type*.
@@ -94,7 +118,7 @@ Body
 Abstract supertype for all bodies that can interact with a `Particle` via `collide_with_body(::Particle, ::Body)`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/163a338537b961adaf80367d8be47b4bff9b382e/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/c5bd17bda54b530adc8489e34cccf745ac95941b/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CylinderSideWall' href='#GBGKnudsenGas.CylinderSideWall'>#</a>
 **`GBGKnudsenGas.CylinderSideWall`** &mdash; *Type*.
@@ -108,10 +132,10 @@ CylinderSideWall(x_1::SVector{3, Float64}, x_2::SVector{3, Float64}, r::Float64)
 
 Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radius `r`.
 
-Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via the `CompoundBody`, like we do in `IsotropicHelicopiod`.
+Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/163a338537b961adaf80367d8be47b4bff9b382e/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/c5bd17bda54b530adc8489e34cccf745ac95941b/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Particle' href='#GBGKnudsenGas.Particle'>#</a>
 **`GBGKnudsenGas.Particle`** &mdash; *Type*.
@@ -125,7 +149,7 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/163a338537b961adaf80367d8be47b4bff9b382e/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/c5bd17bda54b530adc8489e34cccf745ac95941b/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
@@ -140,7 +164,7 @@ Sphere(x::SVector{3, Float64}, x::Float64)
 Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/163a338537b961adaf80367d8be47b4bff9b382e/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/c5bd17bda54b530adc8489e34cccf745ac95941b/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.collide_with_body-Tuple{Particle, Body}' href='#GBGKnudsenGas.collide_with_body-Tuple{Particle, Body}'>#</a>
 **`GBGKnudsenGas.collide_with_body`** &mdash; *Method*.
@@ -156,5 +180,5 @@ Compute the next collision of `particle` with `body`, assuming straight-line mot
 Return a new `Particle` located at the collision point, with updated velocity (after collision) and time, or `nothing` if there is no collision.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/163a338537b961adaf80367d8be47b4bff9b382e/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/c5bd17bda54b530adc8489e34cccf745ac95941b/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
 

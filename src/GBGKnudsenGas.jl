@@ -85,7 +85,7 @@ end
 
 Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radius `r`.
 
-Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via the `CompoundBody`, like we do in `IsotropicHelicopiod`.
+Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
 """
 struct CylinderSideWall <: Body
   x_1::SVector{3, Float64}

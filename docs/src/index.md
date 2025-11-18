@@ -31,6 +31,20 @@ Then you can use it as usual:
 using GBGKnudsenGas
 ```
 
+## Extending the library
+
+One can add other types of bodies. For that one needs to define the body-type, e.g. `Elipsoid` and implement the respective `collide_with_body` function,
+
+```julia
+collide_with_body(particle::Particle, elipsoid::Elipsoid)::Union{Nothing, Particle}
+```
+
+Existing implementation for `Sphere` can be used for reference.
+
+As for non-specular collisions, I envision the following architecture. Each body type is extended with a property, `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
+
+Currently, I haven't thought of adding arbitrary meshes for bodies, but that would be a valuable feature to have.
+
 ## API Reference
 
 Below is the API reference generated from the docstrings
