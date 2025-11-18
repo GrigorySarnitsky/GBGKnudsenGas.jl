@@ -5,17 +5,20 @@ Simulate Knudsen flow of particles past a body, where the particle mean free pat
 
 The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
 
-An example demonstrating a complete flow simulation around a special body (an isotropic helicoid) is included.
+An example demonstrating a complete flow simulation around a special body (isotropic helicoid) is included.
 
 Currently, all particle–body collisions are assumed to be specular.
 """
 module GBGKnudsenGas
 
+
 export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, CompoundBodyDynamic,
  collide_with_body, get_initial_particle_state
 
+
 using StaticArrays
 using LinearAlgebra
+
 
 """
     Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
@@ -28,11 +31,27 @@ struct Particle
   t::Float64
 end
 
-abstract type Body end
-
-collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
 
 """
+    Body
+
+Abstract supertype for all bodies that can interact with a `Particle` via `collide_with_body(::Particle, ::Body)`.
+"""
+abstract type Body end
+
+
+"""
+    collide_with_body(particle::Particle, body::Body) -> Union{Nothing,Particle}
+
+Compute the next collision of `particle` with `body`, assuming straight-line motion between collisions.
+
+Return a new `Particle` located at the collision point, with updated velocity (after collision) and time, or `nothing` if there is no collision.
+"""
+collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
+
+
+"""
+    Sphere <: Body
     Sphere(x::SVector{3, Float64}, x::Float64)
 
 Sphere of radius `r` centered at point `x`.
@@ -41,6 +60,7 @@ struct Sphere <: Body
   x::SVector{3, Float64}
   r::Float64
 end
+
 
 function collide_with_body(particle::Particle, sphere::Sphere)::Union{Nothing, Particle}
   Δx = particle.x - sphere.x
@@ -58,6 +78,15 @@ function collide_with_body(particle::Particle, sphere::Sphere)::Union{Nothing, P
   return Particle(v_after_collision, x_at_collision, particle.t + time_to_collision)
 end
 
+
+"""
+    CylinderSideWall <: Body
+    CylinderSideWall(x_1::SVector{3, Float64}, x_2::SVector{3, Float64}, r::Float64)
+
+Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radius `r`.
+
+Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via the `CompoundBody`, like we do in `IsotropicHelicopiod`.
+"""
 struct CylinderSideWall <: Body
   x_1::SVector{3, Float64}
   x_2::SVector{3, Float64}
