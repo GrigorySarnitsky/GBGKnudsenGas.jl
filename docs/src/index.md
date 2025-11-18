@@ -68,10 +68,12 @@ Sphere
 CylinderSideWall
 CompoundBody
 CompoundBodyDynamic
+IsotropicHelicoid
 ```
 
 ### Functions
 
 ```@docs
 collide_with_body
+get_initial_particle_state
 ```

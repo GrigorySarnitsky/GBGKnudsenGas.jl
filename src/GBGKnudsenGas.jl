@@ -45,7 +45,7 @@ abstract type Body end
 
 Compute the next collision of `particle` with `body`, assuming straight-line motion between collisions.
 
-Return a new `Particle` located at the collision point, with updated velocity (after collision) and time, or `nothing` if there is no collision.
+Return a new `Particle` located at the collision point, with updated velocity (after the collision) and time, or `nothing` if there is no collision.
 """
 collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
 
@@ -162,14 +162,17 @@ struct CompoundBody{T<:Tuple{Vararg{<:Body}}} <: Body
   bodies::T
 end
 
+
 CompoundBody(bodies::Vararg{<:Body}) = CompoundBody(bodies)
 CompoundBody(bodies::AbstractVector{<:Body}) = CompoundBody(Tuple(bodies))
+
 
 function earlier(a::Union{Nothing, Particle}, b::Union{Nothing, Particle})
   a === nothing && return b
   b === nothing && return a
   return a.t <= b.t ? a : b
 end
+
 
 earliest_collision(::Particle, ::Tuple{}) = nothing
 function earliest_collision(particle::Particle, bodies::Tuple)
@@ -178,15 +181,26 @@ function earliest_collision(particle::Particle, bodies::Tuple)
   return earlier(first_collision, rest_collision)
 end
 
+
 function collide_with_body(particle::Particle, compound_body::CompoundBody)
   return earliest_collision(particle, compound_body.bodies)
 end
 
+
+"""
+    IsotropicHelicoid <: Body
+    IsotropicHelicoid(cube_side_length::Float64, r::Float64)
+
+A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`.
+
+The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
+"""
 struct IsotropicHelicoid <: Body
   cube_side_length::Float64
   r::Float64
   elements::CompoundBody
 end
+
 
 IsotropicHelicoid(cube_side_length, r) = IsotropicHelicoid(cube_side_length, r,
   CompoundBody(
@@ -228,10 +242,23 @@ IsotropicHelicoid(cube_side_length, r) = IsotropicHelicoid(cube_side_length, r,
       Sphere(SA[ 3,  2, -1] / 6 * cube_side_length, r), Sphere(SA[-3,  1, -2] / 6 * cube_side_length, r)),
   ))
 
+
 function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)::Union{Nothing, Particle}
   return collide_with_body(particle, helicoid.elements)
 end
 
+
+"""
+    get_initial_particle_state(mean_v, std_v, domain_radius) -> Particle
+
+Sample an initial particle state for a gas in thermal equilibrium flowing
+past a body:
+
+* The initial position is drawn uniformly on the sphere of radius `domain_radius` centered at the origin.
+* The velocity is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`.
+
+The returned `Particle` has time `t = 0.0`.
+"""
 function get_initial_particle_state(mean_v, std_v, domain_radius)
   ϕ, θ = 2*π*rand(), acos(2*rand() - 1)
   x = domain_radius * SA[sin(θ)*cos(ϕ), sin(θ)*sin(ϕ), cos(θ)]
