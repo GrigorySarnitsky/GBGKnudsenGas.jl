@@ -1,5 +1,8 @@
 # GBGKnudsenGas.jl
 
+```@contents
+```
+
 Simulate Knudsen flow of particles past a body, where the particle mean free path is much larger than the body size. In this regime, particles interact only with the body and not with each other.
 
 The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
@@ -31,9 +34,13 @@ Then you can use it as usual:
 using GBGKnudsenGas
 ```
 
+## Using GBGKnudsenGas.jl
+
+## Complete example with visualization
+
 ## Extending the library
 
-One can add other types of bodies. For that one needs to define the body-type, e.g. `Elipsoid` and implement the respective `collide_with_body` function,
+To add another kind of body, one needs to define the body-type, e.g. `Elipsoid` and implement the respective `collide_with_body` function,
 
 ```julia
 collide_with_body(particle::Particle, elipsoid::Elipsoid)::Union{Nothing, Particle}
@@ -41,7 +48,7 @@ collide_with_body(particle::Particle, elipsoid::Elipsoid)::Union{Nothing, Partic
 
 Existing implementation for `Sphere` can be used for reference.
 
-As for non-specular collisions, I envision the following architecture. Each body type is extended with a property, `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
+As for non-specular collisions, I envision the following architecture. Each body type is extended with the property `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
 
 Currently, I haven't thought of adding arbitrary meshes for bodies, but that would be a valuable feature to have.
 
@@ -49,6 +56,23 @@ Currently, I haven't thought of adding arbitrary meshes for bodies, but that wou
 
 Below is the API reference generated from the docstrings
 
-```@autodocs
-Modules = [GBGKnudsenGas]
+### Modules
+
+```@docs
+GBGKnudsenGas
+```
+
+### Types
+
+```@docs
+Particle
+Body
+Sphere
+CylinderSideWall
+```
+
+### Functions
+
+```@docs
+collide_with_body
 ```
