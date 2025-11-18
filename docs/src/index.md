@@ -8,22 +8,28 @@ An example demonstrating a complete flow simulation around a special body (an is
 
 Currently, all particle–body collisions are assumed to be specular.
 
-The name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where its primary development took place.
+The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
 
 ## Installation
 
 This is an unregistered package, meaning that it is not listed in the `General` Julia registry and to install it you run
 
-    ]add https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl
+```julia
+]add https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl
+```
 
 or
 
-    using Pkg
-    Pkg.add(url="hhttps://github.com/GrigorySarnitsky/GBGKnudsenGas.jl")
+```julia
+using Pkg
+Pkg.add(url="https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl")
+```
 
 Then you can use it as usual:
 
-    using GBGKnudsenGas
+```julia
+using GBGKnudsenGas
+```
 
 ## API Reference
 

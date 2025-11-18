@@ -18,7 +18,7 @@ An example demonstrating a complete flow simulation around a special body (an is
 Currently, all particle–body collisions are assumed to be specular.
 
 
-The name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where its primary development took place.
+The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
 
 
 <a id='Installation'></a>
@@ -31,7 +31,7 @@ The name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), 
 This is an unregistered package, meaning that it is not listed in the `General` Julia registry and to install it you run
 
 
-```
+```julia
 ]add https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl
 ```
 
@@ -39,16 +39,16 @@ This is an unregistered package, meaning that it is not listed in the `General` 
 or
 
 
-```
+```julia
 using Pkg
-Pkg.add(url="hhttps://github.com/GrigorySarnitsky/GBGKnudsenGas.jl")
+Pkg.add(url="https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl")
 ```
 
 
 Then you can use it as usual:
 
 
-```
+```julia
 using GBGKnudsenGas
 ```
 
@@ -80,7 +80,7 @@ An example demonstrating a complete flow simulation around a special body (an is
 Currently, all particle–body collisions are assumed to be specular.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b5391c0a17807bfe2fa8cbc49331ad29593b608c/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/e3059b6bc749699864c6f283589d374acc2c7be8/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Particle' href='#GBGKnudsenGas.Particle'>#</a>
 **`GBGKnudsenGas.Particle`** &mdash; *Type*.
@@ -94,7 +94,7 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b5391c0a17807bfe2fa8cbc49331ad29593b608c/src/GBGKnudsenGas.jl#L20-L24' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/e3059b6bc749699864c6f283589d374acc2c7be8/src/GBGKnudsenGas.jl#L20-L24' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
@@ -108,5 +108,5 @@ Sphere(x::SVector{3, Float64}, x::Float64)
 Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/b5391c0a17807bfe2fa8cbc49331ad29593b608c/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/e3059b6bc749699864c6f283589d374acc2c7be8/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
 
