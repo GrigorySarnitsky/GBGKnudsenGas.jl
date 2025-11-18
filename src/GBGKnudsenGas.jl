@@ -149,11 +149,11 @@ end
 
 A compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
 
-This type should be default choice for representing compound bodies as it is usually faster.
+This type should be the default choice for representing compound bodies, as it is usually faster.
 
 Use the convenience constructors
 
-    CompoundBody(b_1, b_2, b_3, ...)
+    CompoundBody(bodies::Vararg{<:Body})
     CompoundBody(bodies::AbstractVector{<:Body})
 
 to build instances.
