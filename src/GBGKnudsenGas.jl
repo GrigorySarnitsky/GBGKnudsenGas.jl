@@ -1,21 +1,42 @@
+"""
+    GBGKnudsenGas
+
+Simulate Knudsen flow of particles past a body, where the particle mean free path is much larger than the body size. In this regime, particles interact only with the body and not with each other.
+
+The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
+
+An example demonstrating a complete flow simulation around a special body (an isotropic helicoid) is included.
+
+Currently, all particle–body collisions are assumed to be specular.
+"""
 module GBGKnudsenGas
 
 export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, CompoundBodyDynamic,
-  collide_with_body, get_initial_particle_state
+ collide_with_body, get_initial_particle_state
 
 using StaticArrays
 using LinearAlgebra
 
+"""
+    Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
+
+Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
+"""
 struct Particle
-  t::Float64
-  x::SVector{3, Float64}
   v::SVector{3, Float64}
+  x::SVector{3, Float64}
+  t::Float64
 end
 
 abstract type Body end
 
 collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
 
+"""
+  Sphere(x::SVector{3, Float64}, x::Float64)
+
+Sphere centered at position `x` of radius `r`.
+"""
 struct Sphere <: Body
   x::SVector{3, Float64}
   r::Float64
@@ -34,7 +55,7 @@ function collide_with_body(particle::Particle, sphere::Sphere)::Union{Nothing, P
   Δx_at_collision = x_at_collision - sphere.x
   v_after_collision = particle.v - 2 * Δx_at_collision * (particle.v ⋅ Δx_at_collision) / sphere.r^2
   
-  return Particle(particle.t + time_to_collision, x_at_collision, v_after_collision)
+  return Particle(v_after_collision, x_at_collision, particle.t + time_to_collision)
 end
 
 struct CylinderSideWall <: Body
@@ -64,7 +85,7 @@ function collide_with_body(particle::Particle, cylinder::CylinderSideWall)::Unio
   Δx_⊥_at_collision = Δx_at_collision - (Δx_at_collision ⋅ x_2_1) / x_2_1² * x_2_1
   v_after_collision = particle.v - 2 * Δx_⊥_at_collision * (particle.v ⋅ Δx_⊥_at_collision) / cylinder.r^2
   
-  return Particle(particle.t + time_to_collision, x_at_collision, v_after_collision)
+  return Particle(v_after_collision, x_at_collision, particle.t + time_to_collision)
 end
 
 struct CompoundBodyDynamic <: Body
@@ -162,7 +183,7 @@ function get_initial_particle_state(mean_v, std_v, domain_radius)
   ϕ, θ = 2*π*rand(), acos(2*rand() - 1)
   x = domain_radius * SA[sin(θ)*cos(ϕ), sin(θ)*sin(ϕ), cos(θ)]
   v = std_v * SA[randn(), randn(), randn()] + mean_v
-  Particle(0.0, x, v)
+  Particle(v, x, 0.0)
 end
 
 end # module GBGKnudsenGas
