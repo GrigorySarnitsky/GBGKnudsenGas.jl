@@ -5,13 +5,6 @@
 
 # GBGKnudsenGas.jl
 
-- [GBGKnudsenGas.jl](index.md#GBGKnudsenGas.jl)
-    - [Installation](index.md#Installation)
-    - [Using GBGKnudsenGas.jl](index.md#Using-GBGKnudsenGas.jl)
-    - [Complete example with visualization](index.md#Complete-example-with-visualization)
-    - [Extending the library](index.md#Extending-the-library)
-    - [API Reference](index.md#API-Reference)
-
 
 Simulate Knudsen flow of particles past a body, where the particle mean free path is much larger than the body size. In this regime, particles interact only with the body and not with each other.
 
@@ -132,7 +125,7 @@ An example demonstrating a complete flow simulation around a special body (isotr
 Currently, all particle–body collisions are assumed to be specular.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/0b4777f08b730d5f93f234971aede6a956832713/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
 
 
 <a id='Types'></a>
@@ -153,7 +146,7 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/0b4777f08b730d5f93f234971aede6a956832713/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Body' href='#GBGKnudsenGas.Body'>#</a>
 **`GBGKnudsenGas.Body`** &mdash; *Type*.
@@ -167,7 +160,7 @@ Body
 Abstract supertype for all bodies that can interact with a `Particle` via `collide_with_body(::Particle, ::Body)`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/0b4777f08b730d5f93f234971aede6a956832713/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
@@ -182,7 +175,7 @@ Sphere(x::SVector{3, Float64}, x::Float64)
 Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/0b4777f08b730d5f93f234971aede6a956832713/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CylinderSideWall' href='#GBGKnudsenGas.CylinderSideWall'>#</a>
 **`GBGKnudsenGas.CylinderSideWall`** &mdash; *Type*.
@@ -199,7 +192,7 @@ Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radiu
 Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/0b4777f08b730d5f93f234971aede6a956832713/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
 
 
 <a id='Functions'></a>
@@ -222,5 +215,5 @@ Compute the next collision of `particle` with `body`, assuming straight-line mot
 Return a new `Particle` located at the collision point, with updated velocity (after collision) and time, or `nothing` if there is no collision.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/0b4777f08b730d5f93f234971aede6a956832713/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/6870dc70905cea4e7ec72557f09a7e14447dacf0/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
 
