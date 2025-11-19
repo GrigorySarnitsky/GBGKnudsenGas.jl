@@ -41,13 +41,13 @@ abstract type Body end
 
 
 """
-    collide_with_body(particle::Particle, body::Body) -> Union{Nothing,Particle}
+    collide_with_body(particle::Particle, body::Body) -> Union{Nothing, Particle}
 
 Compute the next collision of `particle` with `body`, assuming straight-line motion between collisions.
 
 Return a new `Particle` located at the collision point, with updated velocity (after the collision) and time, or `nothing` if there is no collision.
 """
-collide_with_body(::Particle, ::Body)::Union{Nothing,Particle} = error("No collide_with_body defined for this body")
+collide_with_body(::Particle, ::Body)::Union{Nothing, Particle} = error("No collide_with_body defined for this body")
 
 
 """
@@ -191,7 +191,7 @@ end
     IsotropicHelicoid <: Body
     IsotropicHelicoid(cube_side_length::Float64, r::Float64)
 
-A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`.
+A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`. This cube side length indirectly defines the length of each rod.
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
@@ -251,16 +251,15 @@ end
 """
     get_initial_particle_state(mean_v, std_v, domain_radius) -> Particle
 
-Sample an initial particle state for a gas in thermal equilibrium flowing
-past a body:
+Sample an initial particle state for a gas in thermal equilibrium flowing past a body:
 
-* The initial position is drawn uniformly on the sphere of radius `domain_radius` centered at the origin.
-* The velocity is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`.
-
-The returned `Particle` has time `t = 0.0`.
+* The initial position `Particle.x` is drawn uniformly on the sphere of radius `domain_radius` centered at the origin `[0.0, 0.0, 0.0]`.
+* The velocity `Particle.v` is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`.
+* The time `Particle.t` is set to `0.0`.
 """
 function get_initial_particle_state(mean_v, std_v, domain_radius)
-  ϕ, θ = 2*π*rand(), acos(2*rand() - 1)
+  ϕ = 2 * π * rand()
+  θ = acos(2 * rand() - 1.0)
   x = domain_radius * SA[sin(θ)*cos(ϕ), sin(θ)*sin(ϕ), cos(θ)]
   v = std_v * SA[randn(), randn(), randn()] + mean_v
   Particle(v, x, 0.0)
