@@ -52,7 +52,7 @@ collide_with_body(::Particle, ::Body)::Union{Nothing, Particle} = error("No coll
 
 """
     Sphere <: Body
-    Sphere(x::SVector{3, Float64}, x::Float64)
+    Sphere(x::SVector{3, Float64}, r::Float64)
 
 Sphere of radius `r` centered at point `x`.
 """
