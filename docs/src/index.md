@@ -38,14 +38,16 @@ using GBGKnudsenGas
 Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes $\langle {\cdot}' \rangle$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging only over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 ```math
-\langle \Delta v \rangle_\text{c} = \langle v_\text{after} - v_\text{before} | \text{particle has collieded} \rangle.
+\langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle v_\text{after} - v_\text{before} | \text{particle has collieded} \rangle.
 ```
 
-We want to check the Eprstein's prediction
+We want to check the Eprstein's prediction that $\langle \Delta \boldsymbol{v} \rangle_\text{c}$ is proportional to the mean flow velocity $\langle \boldsymbol{v} \rangle_\infty$ at infinity:
 
 ```math
-
+  \langle \Delta \boldsymbol{v} \rangle_\text{c} = - \delta \langle \boldsymbol{v} \rangle_\infty,
 ```
+
+with $\delta = 1$ for specular collisions.
 
 In this form this relatin can be found in .
 
@@ -60,7 +62,7 @@ using GBGKnudsenGas
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean velocity $\langle \bm v \rangle$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $\sqrt{\langle v'^2 \rangle}$ of particle velocities at equilibrium (`std_v`). We assume that initially all the particles start on the boundary of a spherical domain of radius `domain_radius`.
+Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $\langle \boldsymbol{v} \rangle_\infty$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $\sqrt{\langle v'^2 \rangle}$ of particle velocities at equilibrium (`std_v`). We assume that initially all the particles start on the boundary of a spherical domain of radius `domain_radius`.
 
 
 ```julia
