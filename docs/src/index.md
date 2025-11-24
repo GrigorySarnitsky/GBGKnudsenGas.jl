@@ -33,7 +33,13 @@ using GBGKnudsenGas
 
 ## Using GBGKnudsenGas.jl
 
-## Complete example with visualization
+## Complete example: Epstein drag
+
+Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider a flow of Knudsen gas around a sphere with specular collisions. We set our goal to calculate the per-collision change of particle velocity $\langle \Delta v \rangle_\text{c}$:
+
+$$
+\langle \Delta v \rangle_\text{c} = \langle v_\text{after collision} - v_\text{before collision} | \text{particle has collieded} \rangle
+$$
 
 ## Extending the library
 
