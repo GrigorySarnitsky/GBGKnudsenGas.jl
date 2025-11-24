@@ -6,7 +6,7 @@ The module provides building blocks to create your own flow setups. The body is 
 
 An example demonstrating a complete flow simulation around a special body (isotropic helicoid) is included.
 
-Currently, all particle–body collisions are assumed to be specular.
+Currently, all particle–body collisions are assumed to be specular. Throughout the package, we use a Cartesian coordinate system.
 
 The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
 
@@ -35,11 +35,23 @@ using GBGKnudsenGas
 
 ## Complete example: Epstein drag
 
-Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider a flow of Knudsen gas past a sphere, assuming specular collisions. We set our goal to calculate the per-collision change of particle velocity $\langle \Delta v \rangle_\text{c}$. We denote ensemble averages by angle brackets, $\langle {\cdot} \rangle$, the index $\text{c}$ denotes averaging among the particles that actually experience collision. In usual notation for conditional averaging, $\langle \Delta v \rangle_\text{c}$ is
+Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta v \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, the index $\text{c}$ indicates averaging only over the particles that actually collide with the sphere. In standard notations for conditional averages,
 
 ```math
-\langle \Delta v \rangle_\text{c} = \langle v_\text{after collision} - v_\text{before collision} | \text{particle has collieded} \rangle
+\langle \Delta v \rangle_\text{c} = \langle v_\text{after} - v_\text{before} | \text{particle has collieded} \rangle.
 ```
+
+Full code of this computation is available in `examples/epstein_sphere.jl`, where it is written for optimal performance. Below is a more explainatory version of 
+
+We start by defining our sphere of radius $1.0$, centered at the origin $(0, 0, 0)$ of our Cartesian coordinate system:
+
+```julia
+using GBGKnudsenGas
+
+epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
+```
+
+Gas particles originate on 
 
 
 ## Extending the library

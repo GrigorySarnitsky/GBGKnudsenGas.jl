@@ -7,7 +7,7 @@ The module provides building blocks to create your own flow setups. The body is 
 
 An example demonstrating a complete flow simulation around a special body (isotropic helicoid) is included.
 
-Currently, all particle–body collisions are assumed to be specular.
+Currently, all particle–body collisions are assumed to be specular. Throughout the package, we use a Cartesian coordinate system.
 """
 module GBGKnudsenGas
 
