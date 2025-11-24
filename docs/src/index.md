@@ -35,7 +35,7 @@ using GBGKnudsenGas
 
 ## Complete example: Epstein drag
 
-Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta v \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, the index $\text{c}$ indicates averaging only over the particles that actually collide with the sphere. In standard notations for conditional averages,
+Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta v \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes $\langle {\cdot}' \rangle$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging only over the particles that actually collide with the sphere. In standard notations for conditional averages,
 
 ```math
 \langle \Delta v \rangle_\text{c} = \langle v_\text{after} - v_\text{before} | \text{particle has collieded} \rangle.
@@ -46,12 +46,41 @@ Full code of this computation is available in `examples/epstein_sphere.jl`, wher
 We start by defining our sphere of radius $1.0$, centered at the origin $(0, 0, 0)$ of our Cartesian coordinate system:
 
 ```julia
+using StaticArrays
 using GBGKnudsenGas
 
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Gas particles originate on 
+Next, we need to come up with the initial state of the gas particles before they hit the sphere. The gas at thermal equilibrium, moving past the sphere with some mean velocity $\langle \bm v \rangle$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $\sqrt{\langle v'^2 \rangle}$ of particle velocities at equilibrium (`std_v`). We assume that initially all the particles start on the boundary of a spherical domain of radius `domain_radius`.
+
+
+```julia
+function find_single_collision(body, mean_v, std_v, domain_radius)
+  while true
+    particle_before = get_initial_particle_state(mean_v, std_v, domain_radius)
+    particle_after  = collide_with_body(particle_before, body)
+    if !isnothing(particle_after)
+      return particle_before, particle_after
+    end
+  end 
+end
+```
+
+This will give us . But to calculate , we need 
+
+```julia
+using Base.Threads
+
+function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
+  particles_before_collision = Array{Particle, 1}(undef, sample_size)
+  particles_after_collision  = Array{Particle, 1}(undef, sample_size)
+  @threads for i in 1:sample_size
+    particles_before_collision[i], particles_after_collision[i] = find_single_collision(body, mean_v, std_v, domain_radius)
+  end
+  return particles_before_collision, particles_after_collision
+end
+```
 
 
 ## Extending the library
