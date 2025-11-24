@@ -35,7 +35,7 @@ using GBGKnudsenGas
 
 ## Complete example: Epstein drag
 
-Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \bm{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes $\langle {\cdot}' \rangle$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging only over the particles that actually collide with the sphere. In standard notation for conditional averages,
+Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes $\langle {\cdot}' \rangle$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging only over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 ```math
 \langle \Delta v \rangle_\text{c} = \langle v_\text{after} - v_\text{before} | \text{particle has collieded} \rangle.
