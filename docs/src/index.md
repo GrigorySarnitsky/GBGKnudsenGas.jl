@@ -1,12 +1,12 @@
 # GBGKnudsenGas.jl
 
-Simulate Knudsen flow of particles past a body, where the particle mean free path is much larger than the body size. In this regime, particles interact only with the body and not with each other.
+Simulate Knudsen flow of particles past a stationary body, where the particle mean free path is much larger than the body size. In this regime, particles interact with the body but not with each other. The body is assumed to be massive, so particle collisions do not move it.
 
 The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
 
-An example demonstrating a complete flow simulation around a special body (isotropic helicoid) is included.
+An example demonstrating a complete flow simulation around a sphere is included.
 
-Currently, all particle–body collisions are assumed to be specular. Throughout the package, we use a Cartesian coordinate system.
+All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Finally, `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
 The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
 
