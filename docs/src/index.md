@@ -38,8 +38,10 @@ using GBGKnudsenGas
 Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes ${\cdot}'$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 ```math
-\langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collieded} \rangle.
+\langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collieded} \rangle,
 ```
+
+where $\boldsymbol{v}_\text{before}$ and $\boldsymbol{v}_\text{after}$ are the particle's velocity before and after the collision with the sphere.
 
 We want to check the Eprstein's 1924 calculation that $\langle \Delta \boldsymbol{v} \rangle_\text{c}$ is proportional to the mean flow velocity $\langle \boldsymbol{v} \rangle_\infty$ at infinity:
 
@@ -47,7 +49,7 @@ We want to check the Eprstein's 1924 calculation that $\langle \Delta \boldsymbo
   \langle \Delta \boldsymbol{v} \rangle_\text{c} = - \delta \langle \boldsymbol{v} \rangle_\infty,
 ```
 
-with $\delta = 1$ for specular collisions. In this form this relatin can be found in ??? 2012?, the original Epstein paper is.
+with $\delta = 1$ for specular collisions. In this form this relatin can be found in ??? 2003. See also the original paper, Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23.6 (1924), 710.
 
 Full code of this computation is available in `examples/epstein_sphere.jl`, where it is written for optimal performance. Below is a more explainatory version of 
 
