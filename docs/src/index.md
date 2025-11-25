@@ -6,7 +6,7 @@ The module provides building blocks to create your own flow setups. The body is 
 
 An example demonstrating a complete flow simulation around a sphere is included.
 
-All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Finally, `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
+All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note, `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
 The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
 
