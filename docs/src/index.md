@@ -38,7 +38,7 @@ using GBGKnudsenGas
 Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes ${\cdot}'$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 ```math
-\langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collieded} \rangle,
+\langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collided} \rangle,
 ```
 
 where $`\boldsymbol{v}_\text{before}`$ and $`\boldsymbol{v}_\text{after}`$ are the particle's velocity before and after the collision with the sphere.
@@ -53,7 +53,7 @@ with $\delta = 1$ for specular collisions. In this form this relatin can be foun
 
 Full code of this computation is available in `examples/epstein_sphere.jl`, where it is written for optimal performance. Below is a more explainatory version of 
 
-We start by defining our sphere of radius $1.0$, centered at the origin $(0, 0, 0)$ of our Cartesian coordinate system:
+We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and centered it the origin $(0, 0, 0)$ of our Cartesian coordinate system:
 
 ```julia
 using StaticArrays
@@ -62,7 +62,9 @@ using GBGKnudsenGas
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $\langle \boldsymbol{v} \rangle_\infty$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $\sqrt{\langle v'^2 \rangle}$ of particle velocities at equilibrium (`std_v`). We assume that initially all the particles start on the boundary of a spherical domain of radius `domain_radius`.
+Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $\langle \boldsymbol{v} \rangle_\infty$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $\sqrt{\langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty / 3}$ of particle velocities far away from the sphere (denoted `std_v` in code). We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`.
+
+Thus defined initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution untill it finds the one that will collide with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returnes the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
 
 
 ```julia
@@ -77,7 +79,7 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
 end
 ```
 
-This will give us . But to calculate , we need 
+This will give us . But to 
 
 ```julia
 using Base.Threads
