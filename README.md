@@ -78,7 +78,7 @@ $$
 where $`\boldsymbol{v}_\text{before}`$ and $`\boldsymbol{v}_\text{after}`$ are the particle's velocity before and after the collision with the sphere.
 
 
-We want to check the Eprstein's 1924 calculation that $\langle \Delta \boldsymbol{v} \rangle_\text{c}$ is proportional to the mean flow velocity $\langle \boldsymbol{v} \rangle_\infty$ at infinity:
+We want to check the Eprstein's 1924 calculation that $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ is proportional to the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ at infinity:
 
 
 $$
