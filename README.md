@@ -106,13 +106,14 @@ epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $`\sigma_{v, \infty}`$,
 
 
-$$
- \sigma_{v, \infty} = \sqrt{\frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty},
- ```
+<!– ```math  \sigma*{v, \infty} = \sqrt{\frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle*\infty},
+
+
+```-->
  
  of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas particles, the Mach number $\text{Ma}$ of the flow is
 
-$$
+```
 
 
 math \text{Ma} = \frac{3}{4} \frac{\| \langle \boldsymbol{v} \rangle*\infty \| }{\sigma*v}
