@@ -22,6 +22,7 @@ or
 
 ```julia
 using Pkg
+
 Pkg.add(url="https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl")
 ```
 
@@ -49,7 +50,7 @@ We want to check the Eprstein's 1924 calculation that $`\langle \Delta \boldsymb
   \langle \Delta \boldsymbol{v} \rangle_\text{c} = - \delta \langle \boldsymbol{v} \rangle_\infty,
 ```
 
-with $\delta = 1$ for specular collisions. In this form this relation can be obtained... . See also the original paper, Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23.6 (1924), 710.
+with $\delta = 1$ for specular collisions. In this form this relation can be obtained who knows how. See also the original paper, Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23.6 (1924), 710.
 
 Full code of this computation is available in `examples/epstein_sphere.jl`.
 
@@ -71,7 +72,7 @@ Next, we need to generate the initial state of the gas particles before they hit
  of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
 
 ```math
-\text{Ma} = \sqrt{\frac{3}{5}} \frac{\| \langle \boldsymbol{v} \rangle_\infty \|}{\sigma_v}.
+\text{Ma} = \sqrt{\frac{3}{5}} \frac{\| \langle \boldsymbol{v} \rangle_\infty \|}{\sigma_{\infty}}.
 ```
 
 We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`. Later we set `domain_radius` to `20`.
@@ -113,24 +114,42 @@ using Statistics
 
 function mean_Δv_per_collision(body, Ma)
   std_v = 1.0
-  mean_v = SA[Ma * std_v * √(8/π), 0.0, 0.0]
+  mean_v = SA[Ma * std_v * √(5/3), 0.0, 0.0]
   domain_radius = 20.0
   sample_size = 10^6
-  
   particles_before_collision, particles_after_collision = run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-
   return mean(p_a.v - p_b.v for (p_b, p_a) in zip(particles_before_collision, particles_after_collision))
 end
 ```
 
-We call it for out `epstein_sphere` and 10 different values of the Mach number:
+We call it for out `epstein_sphere` and 10 different values of the Mach number, and calculte Epstein's $\delta$:
 
 ```julia
-Ma_s = range(0.1, 10, 1)
-means_Δv_per_collision = @time mean_Δv_per_collision.(Ma_s, Ref(epstein_sphere))
+Ma_s = range(0.0, 3.0, 10)
+mean_Δv_s = @time mean_Δv_per_collision.(Ref(epstein_sphere), Ma_s)
 
-println(means_Δv_per_collision)
+for (Δv, Ma) in zip(mean_Δv_s, Ma_s)
+  println("Ma = ", round(Ma, digits = 2), ",\t δ = ", -round(Δv[1] / (√(5/3) * Ma), digits = 5))
+end
 ```
+
+This should print out something like
+
+```
+105.765674 seconds (758.63 k allocations: 1.079 GiB, 0.17% gc time, 1.02% compilation time)
+Ma = 0.0,	 δ = Inf
+Ma = 0.33,	 δ = 0.9967
+Ma = 0.67,	 δ = 1.00221
+Ma = 1.0,	 δ = 0.99963
+Ma = 1.33,	 δ = 0.99864
+Ma = 1.67,	 δ = 1.00079
+Ma = 2.0,	 δ = 0.99864
+Ma = 2.33,	 δ = 0.99994
+Ma = 2.67,	 δ = 1.00015
+Ma = 3.0,	 δ = 1.00037
+```
+
+As expected, $\delta = 1$ and is independent of the Mach number.
 
 ## Extending the library
 
