@@ -139,7 +139,7 @@ end
 ```
 
 
-To accuratly estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^7`) that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
+To accuratly estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
 
 
 ```julia
@@ -156,7 +156,7 @@ end
 ```
 
 
-Finally, we write a function to calculate $`|\langle \Delta v \rangle|`$ for the specified Mach number `Ma`:
+Finally, we write a function to calculate $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ for the specified Mach number `Ma`:
 
 
 ```julia
@@ -256,16 +256,14 @@ Below is the API reference generated from the docstrings
 GBGKnudsenGas
 ```
 
-Simulate Knudsen flow of particles past a body, where the particle mean free path is much larger than the body size. In this regime, particles interact only with the body and not with each other.
+Simulate Knudsen flow of particles past a stationary body, where the particle mean free path is much larger than the body size. In this regime, particles interact with the body but not with each other. The body is assumed to be massive, so particle collisions do not move it.
 
 The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
 
-An example demonstrating a complete flow simulation around a special body (isotropic helicoid) is included.
-
-Currently, all particle–body collisions are assumed to be specular. Throughout the package, we use a Cartesian coordinate system.
+All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note, `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L1-L11' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L1-L10' class='documenter-source'>source</a><br>
 
 
 <a id='Types'></a>
@@ -286,7 +284,7 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L23-L27' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L22-L26' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Body' href='#GBGKnudsenGas.Body'>#</a>
 **`GBGKnudsenGas.Body`** &mdash; *Type*.
@@ -300,7 +298,7 @@ Body
 Abstract supertype for all bodies that can interact with a `Particle` via `collide_with_body(::Particle, ::Body)`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L35-L39' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L34-L38' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
@@ -315,7 +313,7 @@ Sphere(x::SVector{3, Float64}, r::Float64)
 Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L53-L58' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L52-L57' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CylinderSideWall' href='#GBGKnudsenGas.CylinderSideWall'>#</a>
 **`GBGKnudsenGas.CylinderSideWall`** &mdash; *Type*.
@@ -332,7 +330,7 @@ Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radiu
 Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L82-L89' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L81-L88' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CompoundBody' href='#GBGKnudsenGas.CompoundBody'>#</a>
 **`GBGKnudsenGas.CompoundBody`** &mdash; *Type*.
@@ -358,7 +356,7 @@ CompoundBody(bodies::AbstractVector{<:Body})
 to build instances.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L146-L160' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L145-L159' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CompoundBodyDynamic' href='#GBGKnudsenGas.CompoundBodyDynamic'>#</a>
 **`GBGKnudsenGas.CompoundBodyDynamic`** &mdash; *Type*.
@@ -375,7 +373,7 @@ A compound body whose components are stored in the array `bodies`. A collision w
 This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L121-L128' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L120-L127' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.IsotropicHelicoid' href='#GBGKnudsenGas.IsotropicHelicoid'>#</a>
 **`GBGKnudsenGas.IsotropicHelicoid`** &mdash; *Type*.
@@ -392,7 +390,7 @@ A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L190-L197' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L189-L196' class='documenter-source'>source</a><br>
 
 
 <a id='Functions'></a>
@@ -415,7 +413,7 @@ Compute the next collision of `particle` with `body`, assuming straight-line mot
 Return a new `Particle` located at the collision point, with updated velocity (after the collision) and time, or `nothing` if there is no collision.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L43-L49' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L42-L48' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.get_initial_particle_state' href='#GBGKnudsenGas.get_initial_particle_state'>#</a>
 **`GBGKnudsenGas.get_initial_particle_state`** &mdash; *Function*.
@@ -433,5 +431,5 @@ Sample an initial particle state for a gas in thermal equilibrium flowing past a
   * The time `Particle.t` is set to `0.0`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/1b79afa5b6c97eea93043185ec2cb1af0b11121e/src/GBGKnudsenGas.jl#L251-L259' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L250-L258' class='documenter-source'>source</a><br>
 

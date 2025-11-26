@@ -92,7 +92,7 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
 end
 ```
 
-To accuratly estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^7`) that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
+To accuratly estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
 
 ```julia
 using Base.Threads
@@ -107,7 +107,7 @@ function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
 end
 ```
 
-Finally, we write a function to calculate $`|\langle \Delta v \rangle|`$ for the specified Mach number `Ma`:
+Finally, we write a function to calculate $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ for the specified Mach number `Ma`:
 
 ```julia
 using Statistics
