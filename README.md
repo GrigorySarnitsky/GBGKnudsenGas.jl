@@ -6,16 +6,16 @@
 # GBGKnudsenGas.jl
 
 
-Simulate Knudsen flow of particles past a stationary body, where the particle mean free path is much larger than the body size. In this regime, particles interact with the body but not with each other. The body is assumed to be massive, so particle collisions do not move it.
+This package simulates Knudsen flow of particles past a stationary body, where the particle mean free path is much larger than the body size. In this regime, particles interact with the body but not with each other. The body is assumed to be massive, so particle collisions do not move it.
 
 
-The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
+The package provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). The package includes tools to compute the next collision of a single particle with a body; you can use these to build multi-particle, multi-collision simulations. A simple computational domain for modelling a gas in thermal equilibrium flowing past a body is also provided.
 
 
 An example demonstrating a complete flow simulation around a sphere is included.
 
 
-All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note, `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
+All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note that `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
 
 The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
@@ -28,7 +28,7 @@ The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Got
 ## Installation
 
 
-This is an unregistered package, meaning that it is not listed in the `General` Julia registry and to install it you run
+This is an unregistered package, so it is not listed in the `General` Julia registry. To install it, run:
 
 
 ```julia
@@ -61,14 +61,76 @@ using GBGKnudsenGas
 ## Using GBGKnudsenGas.jl
 
 
-<a id='Complete-example:-Epstein-drag-on-a-sphere'></a>
-
-<a id='Complete-example:-Epstein-drag-on-a-sphere-1'></a>
-
-## Complete example: Epstein drag on a sphere
+The package has three components: the gas particle (type `Particle`), the body past which the gas flows (type `Body`), and the function that calculates the collision between the two (`collide_with_body`). 
 
 
-Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
+The state of a gas particle is represented by the type `Particle` with a constructor
+
+
+```julia
+Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
+```
+
+
+where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t` Note that we use `StaticArrays.jl` to represent the vectors `v` and `x`. For example, let's create a particle `p` that time $t = 0$ has position $(-10, 0, 0)$ and velocity $(1, 0, 0)$:
+
+
+```julia
+using StaticArrays
+using GBGKnudsenGas
+
+p = Particle(SA[1.0, 0.0, 0.0], SA[-10.0, 0.0, 0.0], 0.0)
+```
+
+
+Next, bodies immersed in the Knudsen gas are represented by an abstract supertype `Body`. A concrete example is `Sphere`, which represents a sphere centered at point `x` of radius `r`:
+
+
+```julia
+Sphere <: Body
+Sphere(x::SVector{3, Float64}, r::Float64)
+```
+
+
+For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.x`. For now, let's make a sphere `s` of radius $1$ and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
+
+
+```julia
+s = Sphere(SA[0.0, 0.0, 0.0], 1.0)
+```
+
+
+Finally, there is a function `collide_with_body` which, given a `particle` and a `body`, returns the state of the particle immediately after the collision (at the surface of the body). If no collision occurs, it returns `nothing`.
+
+
+```julia
+collide_with_body(particle::Particle, body::Body) -> Union{Nothing, Particle}
+```
+
+
+Let's collide our particle `p` with the sphere `s`:
+
+
+```julia
+julia> collide_with_body(p, s)
+Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
+```
+
+
+As expected, the collision occurs at the surface of the sphere, reverses the first velocity component of the particle, and takes `9.0` units of time to happen.
+
+
+Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the full API reference at the end.
+
+
+<a id='Complete-example:-Epstein-drag-on-a-sphere-(currently-wrong)'></a>
+
+<a id='Complete-example:-Epstein-drag-on-a-sphere-(currently-wrong)-1'></a>
+
+## Complete example: Epstein drag on a sphere (currently wrong)
+
+
+We provide a concrete example of how to use `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$; the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 
 $$
@@ -79,7 +141,7 @@ $$
 where $`\boldsymbol{v}_\text{before}`$ and $`\boldsymbol{v}_\text{after}`$ are the particle's velocity before and after the collision with the sphere.
 
 
-We want to check the Eprstein's 1924 calculation that $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ is proportional to the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ at infinity:
+We want to check Epstein's 1924 calculation that $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ is proportional to the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ at infinity:
 
 
 $$
@@ -87,7 +149,7 @@ $$
 $$
 
 
-with $\delta = 1$ for specular collisions. In this form this relation can be obtained who knows how. See also the original paper, Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases." *Physical Review,* 23.6 (1924), 710.
+with $\delta = 1$ for specular collisions. In this form this relation can be obtained who knows how. See also the original paper: Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases," *Physical Review,* 23.6 (1924), 710.
 
 
 Full code of this computation is available in `examples/epstein_sphere.jl`.
@@ -104,7 +166,7 @@ epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
 
-Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $`\sigma_{v, \infty}`$,
+Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ (denoted `mean_v` in code). Instead of temperature, we specify the standard deviation $`\sigma_{v, \infty}`$,
 
 
 $$
@@ -112,18 +174,18 @@ $$
 $$
 
 
-of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
+of particle velocities far away from the sphere (denoted `std_v` in code). Assuming a monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
 
 
 $$
-\text{Ma} = \sqrt{\frac{3}{5}} \frac{\| \langle \boldsymbol{v} \rangle_\infty \|}{\sigma_{\infty}}.
+\text{Ma} = \sqrt{\frac{3}{5}} \frac{\| \langle \boldsymbol{v} \rangle_\infty \|}{\sigma_{v, \infty}}.
 $$
 
 
-We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`. Later we set `domain_radius` to `20`.
+We initially place all particles on the boundary of a spherical domain of radius `domain_radius`, which should be sufficiently larger than the unit radius of `epstein_sphere`. Later we set `domain_radius` to `20`.
 
 
-Thus defined initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution untill it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
+Thus defined initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However, we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution until it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
 
 
 ```julia
@@ -139,7 +201,7 @@ end
 ```
 
 
-To accuratly estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
+To accurately estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the initial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
 
 
 ```julia
@@ -173,7 +235,7 @@ end
 ```
 
 
-We call it for out `epstein_sphere` and 10 different values of the Mach number, and calculte Epstein's $\delta$:
+We call it for our `epstein_sphere` and 10 different values of the Mach number, and calculate Epstein’s  $\delta$:
 
 
 ```julia
@@ -186,7 +248,7 @@ end
 ```
 
 
-This should print out something like
+This should print something like
 
 
 ```
@@ -204,7 +266,7 @@ Ma = 3.0,	 δ = 1.00037
 ```
 
 
-As expected, $\delta = 1$ and is independent of the Mach number.
+As expected, $\delta \approx 1$ and is independent of the Mach number.
 
 
 <a id='Extending-the-library'></a>
@@ -214,21 +276,21 @@ As expected, $\delta = 1$ and is independent of the Mach number.
 ## Extending the library
 
 
-To add another kind of body, one needs to define the body-type, e.g. `Elipsoid` and implement the respective `collide_with_body` function,
+To add another kind of body, you define a new body type (e.g. `Ellipsoid`) and implement the corresponding `collide_with_body` method:
 
 
 ```julia
-collide_with_body(particle::Particle, elipsoid::Elipsoid)::Union{Nothing, Particle}
+collide_with_body(particle::Particle, elipsoid::Ellipsoid)::Union{Nothing, Particle}
 ```
 
 
-Existing implementation for `Sphere` can be used for reference.
+The existing implementation for `Sphere` can be used for reference.
 
 
 As for non-specular collisions, I envision the following architecture. Each body type is extended with the property `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
 
 
-Currently, I haven't thought of adding arbitrary meshes for bodies, but that would be a valuable feature to have.
+Currently, arbitrary meshes for bodies are not supported, but that would be a valuable feature to add.
 
 
 <a id='API-Reference'></a>
@@ -258,12 +320,12 @@ GBGKnudsenGas
 
 Simulate Knudsen flow of particles past a stationary body, where the particle mean free path is much larger than the body size. In this regime, particles interact with the body but not with each other. The body is assumed to be massive, so particle collisions do not move it.
 
-The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). Tools are included to compute the next collision of a single particle with a body, which you can use to build multi-particle, multi-collision simulations. A simple computational domain for modeling gas in thermal equilibrium flowing past a body is also provided.
+The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). The package includes tools to compute the next collision of a single particle with a body; you can use these to build multi-particle, multi-collision simulations. A simple computational domain for modelling a gas in thermal equilibrium flowing past a body is also provided.
 
-All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note, `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
+All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note that `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L1-L10' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L1-L10' class='documenter-source'>source</a><br>
 
 
 <a id='Types'></a>
@@ -284,7 +346,7 @@ Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L22-L26' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L22-L26' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Body' href='#GBGKnudsenGas.Body'>#</a>
 **`GBGKnudsenGas.Body`** &mdash; *Type*.
@@ -298,7 +360,7 @@ Body
 Abstract supertype for all bodies that can interact with a `Particle` via `collide_with_body(::Particle, ::Body)`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L34-L38' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L34-L38' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.Sphere' href='#GBGKnudsenGas.Sphere'>#</a>
 **`GBGKnudsenGas.Sphere`** &mdash; *Type*.
@@ -313,7 +375,7 @@ Sphere(x::SVector{3, Float64}, r::Float64)
 Sphere of radius `r` centered at point `x`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L52-L57' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L52-L57' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CylinderSideWall' href='#GBGKnudsenGas.CylinderSideWall'>#</a>
 **`GBGKnudsenGas.CylinderSideWall`** &mdash; *Type*.
@@ -330,7 +392,7 @@ Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radiu
 Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L81-L88' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L81-L88' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CompoundBody' href='#GBGKnudsenGas.CompoundBody'>#</a>
 **`GBGKnudsenGas.CompoundBody`** &mdash; *Type*.
@@ -356,7 +418,7 @@ CompoundBody(bodies::AbstractVector{<:Body})
 to build instances.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L145-L159' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L145-L159' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.CompoundBodyDynamic' href='#GBGKnudsenGas.CompoundBodyDynamic'>#</a>
 **`GBGKnudsenGas.CompoundBodyDynamic`** &mdash; *Type*.
@@ -373,7 +435,7 @@ A compound body whose components are stored in the array `bodies`. A collision w
 This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L120-L127' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L120-L127' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.IsotropicHelicoid' href='#GBGKnudsenGas.IsotropicHelicoid'>#</a>
 **`GBGKnudsenGas.IsotropicHelicoid`** &mdash; *Type*.
@@ -390,7 +452,7 @@ A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L189-L196' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L189-L196' class='documenter-source'>source</a><br>
 
 
 <a id='Functions'></a>
@@ -413,7 +475,7 @@ Compute the next collision of `particle` with `body`, assuming straight-line mot
 Return a new `Particle` located at the collision point, with updated velocity (after the collision) and time, or `nothing` if there is no collision.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L42-L48' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L42-L48' class='documenter-source'>source</a><br>
 
 <a id='GBGKnudsenGas.get_initial_particle_state' href='#GBGKnudsenGas.get_initial_particle_state'>#</a>
 **`GBGKnudsenGas.get_initial_particle_state`** &mdash; *Function*.
@@ -431,5 +493,5 @@ Sample an initial particle state for a gas in thermal equilibrium flowing past a
   * The time `Particle.t` is set to `0.0`.
 
 
-<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/4bf570cbb6089007ebb4ab1e508d138131a0b012/src/GBGKnudsenGas.jl#L250-L258' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl/blob/56690489eeedfaff35991dcb542cddb4bad95d1f/src/GBGKnudsenGas.jl#L250-L258' class='documenter-source'>source</a><br>
 
