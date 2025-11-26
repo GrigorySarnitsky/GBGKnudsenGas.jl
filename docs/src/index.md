@@ -35,7 +35,7 @@ using GBGKnudsenGas
 
 ## Complete example: Epstein drag on a sphere
 
-Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, primes ${\cdot}'$ denote fluctuating part with repsect to the average value. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
+Now we provide a concrete example of using `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$, the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 ```math
 \langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collided} \rangle,
@@ -49,11 +49,11 @@ We want to check the Eprstein's 1924 calculation that $`\langle \Delta \boldsymb
   \langle \Delta \boldsymbol{v} \rangle_\text{c} = - \delta \langle \boldsymbol{v} \rangle_\infty,
 ```
 
-with $\delta = 1$ for specular collisions. In this form this relatin can be found in ??? 2003. See also the original paper, Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23.6 (1924), 710.
+with $\delta = 1$ for specular collisions. In this form this relation can be obtained... . See also the original paper, Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23.6 (1924), 710.
 
-Full code of this computation is available in `examples/epstein_sphere.jl`, where it is written for optimal performance. Below is a more explainatory version of 
+Full code of this computation is available in `examples/epstein_sphere.jl`.
 
-We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it the origin $(0, 0, 0)$ of our Cartesian coordinate system:
+We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of our Cartesian coordinate system:
 
 ```julia
 using StaticArrays
@@ -64,11 +64,14 @@ epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 
 Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ (denoted `mean_v` in code). Instead of tempreture, we specify the standrad deviation $`\sigma_{v, \infty}`$,
 
+```math
+ \sigma_{v, \infty} = \sqrt{\frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty},
+ ```
  
- of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas particles, the Mach number $\text{Ma}$ of the flow is
+ of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
 
 ```math
-\text{Ma} = \frac{3}{4} \frac{\| \langle \boldsymbol{v} \rangle_\infty \| }{\sigma_v}
+\text{Ma} = \frac{3}{5} \frac{| \langle \boldsymbol{v} \rangle_\infty |}{\sigma_v}
 ```
 
 We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`.
