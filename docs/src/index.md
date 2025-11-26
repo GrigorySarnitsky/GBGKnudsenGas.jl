@@ -74,7 +74,7 @@ Next, we need to generate the initial state of the gas particles before they hit
 \text{Ma} = \sqrt{\frac{3}{5}} \frac{\| \langle \boldsymbol{v} \rangle_\infty \|}{\sigma_v}.
 ```
 
-We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`.
+We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`. Later we set `domain_radius` to `20`.
 
 Thus defined initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution untill it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
 
@@ -91,7 +91,7 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
 end
 ```
 
-To accuratly estimate ensemble averages, we need a large sample . The function `run_simulation` below finds `sample_size` particles that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
+To accuratly estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^7`) that collided with the `body` and returns two arrays, one with the intitial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
 
 ```julia
 using Base.Threads
@@ -106,7 +106,7 @@ function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
 end
 ```
 
-Finally, we want to 
+Finally, we write a function to calculate $`|\langle \Delta v \rangle|`$ for the specified Mach number `Ma`:
 
 ```julia
 using Statistics
@@ -123,11 +123,12 @@ function mean_Δv_per_collision(body, Ma)
 end
 ```
 
-And call it for `epstein_sphere` and 10 different values of the Mach number:
+We call it for out `epstein_sphere` and 10 different values of the Mach number:
 
 ```julia
-Ma_s = 0.1:1:10.0
+Ma_s = range(0.1, 10, 1)
 means_Δv_per_collision = @time mean_Δv_per_collision.(Ma_s, Ref(epstein_sphere))
+
 println(means_Δv_per_collision)
 ```
 
