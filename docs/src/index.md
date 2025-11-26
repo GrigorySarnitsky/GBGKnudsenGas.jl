@@ -71,7 +71,7 @@ Next, we need to generate the initial state of the gas particles before they hit
  of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
 
 ```math
-\text{Ma} = \frac{3}{5} \frac{| \langle \boldsymbol{v} \rangle_\infty |}{\sigma_v}
+\text{Ma} = \sqrt{\frac{3}{5}} \frac{| \langle \boldsymbol{v} \rangle_\infty |}{\sigma_v}.
 ```
 
 We put initially all the particles on the boundary of a spherical domain of radius `domain_radius` which should be sufficiently larger than the unit radius of `epstein_sphere`.
