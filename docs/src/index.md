@@ -66,7 +66,7 @@ Next, we need to generate the initial state of the gas particles before they hit
 
 ```math
  \sigma_{v, \infty} = \sqrt{\frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty},
- ```
+```
  
  of particle velocities far away from the sphere (denoted `std_v` in code). Assuming monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
 
