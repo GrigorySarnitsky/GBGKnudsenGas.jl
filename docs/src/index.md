@@ -212,32 +212,3 @@ The existing implementation for `Sphere` can be used for reference.
 As for non-specular collisions, I envision the following architecture. Each body type is extended with the property `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
 
 Currently, arbitrary meshes for bodies are not supported, but that would be a valuable feature to add.
-
-## API Reference
-
-Below is the API reference generated from the docstrings
-
-### Modules
-
-```@docs
-GBGKnudsenGas
-```
-
-### Types
-
-```@docs
-Particle
-Body
-Sphere
-CylinderSideWall
-CompoundBody
-CompoundBodyDynamic
-IsotropicHelicoid
-```
-
-### Functions
-
-```@docs
-collide_with_body
-get_initial_particle_state
-```

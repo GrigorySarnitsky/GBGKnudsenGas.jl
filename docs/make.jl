@@ -9,15 +9,19 @@ end
 remove_jupyter_files()
 
 using Documenter
-using DocumenterMarkdown
 using GBGKnudsenGas
 
 makedocs(
   sitename = "GBGKnudsenGas.jl",
   modules  = [GBGKnudsenGas],
-  pages    = ["Home" => "index.md"],
-  format   = Markdown(),
-  #warnonly = true,   # optional: turn errors into warnings while experimenting
+  format   = Documenter.HTML(),
+  pages    = [
+    "Home" => "index.md",
+    "API"  => "api.md"
+  ],
 )
 
-cp(joinpath(@__DIR__, "build", "index.md"), joinpath(@__DIR__, "..", "README.md"); force = true)
+deploydocs(
+  repo      = "github.com/GrigorySarnitsky/GBGKnudsenGas.jl",
+  devbranch = "master",
+)
