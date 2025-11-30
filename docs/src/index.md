@@ -81,6 +81,12 @@ As expected, the collision occurs at the surface of the sphere, reverses the fir
 
 Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the full API reference at the end.
 
+Figuring out the integral
+
+```math
+\int_{\text{velocity space}} \biggl[\int \| n \boldsymbol v \| H(\boldsymbol v, \boldsymbol x) \mathrm{d} \boldsymbol x \biggr] f(\boldsymbol v)
+```
+
 ## Complete example: Epstein drag on a sphere (currently wrong)
 
 We provide a concrete example of how to use `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$; the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
