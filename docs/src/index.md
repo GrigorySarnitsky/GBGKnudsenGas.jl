@@ -84,7 +84,7 @@ Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder withou
 Figuring out the integral
 
 ```math
-\int\limits_{\mathclap{\text{velocity space}}} \biggl[\int \| \boldsymbol v \| H(\boldsymbol v, \boldsymbol x) \mathrm{d} \boldsymbol x \biggr] f(\boldsymbol v)
+\int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int \| \boldsymbol v \| H(\boldsymbol v, \boldsymbol x) \mathrm{d} \boldsymbol x \biggr] f(\boldsymbol v)
 ```
 
 ## Complete example: Epstein drag on a sphere (currently wrong)
