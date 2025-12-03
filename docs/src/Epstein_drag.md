@@ -34,13 +34,13 @@ see the papers
 
 For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
 ```math
-F_\text{drag, Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2} \, F_\text{drag, Epstein (1924)},
+F_\text{drag, Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \text{Ma}^2} \, F_\text{drag, Epstein (1924)},
 ```
 see the papers
-* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365.
+* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
 * Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
-Kwok's formula has quite a good accuracy, withing 1% of the exact expression. The exact formula for $F_\text{drag}$ by Baines et al. (1965), but we won't use it, see
+Kwok's formula is accurate within 1% of the exact expression. The exact formula for $F_\text{drag}$ by Baines et al. (1965), but we won't use it, see
 * Baines
 
 ## Monte Carlo calcualtion of the Epstein drag with `GBGKnudsenGas.jl`
