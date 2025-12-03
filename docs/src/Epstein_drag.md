@@ -9,22 +9,20 @@ Pages = ["Epstein_drag.md"]
 
 ## Epstein drag
 
-Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v \rangle_\infty$. Its speed of sound $c$ is defined through its adiabatic index $\gamma$ and mass $m$ of its individual particle:
-
+Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v \rangle_\infty$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the respective fluctuating parts. The speed of sound $c$ in the gas is defined through the adiabatic index $\gamma$ and mass $m$ of an individual gas particle:
 ```math
 c = \sqrt{\gamma \frac{k_\text{B} T}{m}}.
 ```
-
-For monatomic gas $\gamma = 5/3$. In addition, we can define the standard deviation of an individual velocity component $\sigma_v$,
+For a monatomic gas $\gamma = 5/3$. In addition, we can define the standard deviation of an individual velocity component $\sigma_v$.
 
 ```math
-  \sigma_v = \frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty = \sqrt{\gamma \frac{k_\text{B} T}{m}}.
+  \sigma_v = \frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty = \sqrt{\frac{k_\text{B} T}{m}} = \frac{c}{\sqrt{\gamma}}.
 ```
 
-The respective Mach number $\text{Ma}$ is
+The Mach number $\text{Ma}$ is
 
 ```math
-\text{Ma} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{c}.
+\text{Ma} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{c} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{\sigma_v \sqrt \gamma}.
 ```
 
 The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ and directed opposite direction to $\langle \boldsymbol v \rangle_\infty$. F
