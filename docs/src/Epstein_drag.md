@@ -9,9 +9,27 @@ Pages = ["Epstein_drag.md"]
 
 ## Epstein drag
 
-Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium with temperature ``T``
+Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v \rangle_\infty$. Its speed of sound $c$ is defined through its adiabatic index $\gamma$ and mass $m$ of its individual particle:
 
-Our goal is to calculate the drag excerted on the sphere by the flow.
+```math
+c = \sqrt{\gamma \frac{k_\text{B} T}{m}}.
+```
+
+For monatomic gas $\gamma = 5/3$. In addition, we can define the standard deviation of an individual velocity component $\sigma_v$,
+
+```math
+  \sigma_v = \frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty = \sqrt{\gamma \frac{k_\text{B} T}{m}}.
+```
+
+The respective Mach number $\text{Ma}$ is
+
+```math
+\text{Ma} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{c}.
+```
+
+The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ and directed opposite direction to $\langle \boldsymbol v \rangle_\infty$. F
+
+Our goal is to calculate the drag excreted on the sphere by the flow.
 
 
 per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$; the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
