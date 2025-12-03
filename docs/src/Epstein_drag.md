@@ -14,39 +14,33 @@ Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas
 c = \sqrt{\gamma \frac{k_\text{B} T}{m}}.
 ```
 For a monatomic gas $\gamma = 5/3$. In addition, we can define the standard deviation of an individual velocity component $\sigma_v$.
-
 ```math
   \sigma_v = \frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty = \sqrt{\frac{k_\text{B} T}{m}} = \frac{c}{\sqrt{\gamma}}.
 ```
-
 The Mach number $\text{Ma}$ is
-
 ```math
 \text{Ma} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{c} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{\sigma_v \sqrt \gamma}.
 ```
 
-The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ and directed opposite direction to $\langle \boldsymbol v \rangle_\infty$. F
-
-Our goal is to calculate the drag excreted on the sphere by the flow.
-
-
-per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$; the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
-
+The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ and directed opposite direction to $\langle \boldsymbol v \rangle_\infty$. Let the sphere radius be $r$. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$
 ```math
-\langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collided} \rangle,
+F_\text{drag, Epstein (1924)} = \frac{8}{3} \sqrt{2 π \gamma} \, \rho c^2 r^2 \, \text{Ma},
 ```
+see the papers
 
-where $`\boldsymbol{v}_\text{before}`$ and $`\boldsymbol{v}_\text{after}`$ are the particle's velocity before and after the collision with the sphere.
+* Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases," _Physical Review,_ 23.6 (1924), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
+* 
 
-We want to check Epstein's 1924 calculation that $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ is proportional to the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ at infinity:
-
+For arbitrary Mach numbers, a good approximation of $F_\text{drag}$ was given by Kwok (1975):
 ```math
-  \langle \Delta \boldsymbol{v} \rangle_\text{c} = - \delta \langle \boldsymbol{v} \rangle_\infty,
+F_\text{drag, Kwok (1975)} = F_\text{drag, Epstein (1924)} \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2},
 ```
+see the original paper
+* Kwok
 
-with $\delta = 1$ for specular collisions. In this form this relation can be obtained who knows how. See also the original paper: Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases," _Physical Review,_ 23.6 (1924), 710.
+Kwok's formula. Finally, the exact form
 
-## Code for Monte Carlo calcualtion of the Epstein drag
+## Monte Carlo calcualtion of the Epstein drag with `GBGKnudsenGas.jl`
 
 Full code of this computation is available in `examples/epstein_sphere.jl`.
 
