@@ -1,8 +1,20 @@
-# Espstein drag
+# Example: Epstein drag calculation
 
-Below is the API reference generated from the docstrings.
 
-We provide a concrete example of how to use `GBGKnudsenGas.jl`. We consider the flow of a Knudsen gas past a sphere with specular collisions. Our goal is to calculate the per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$; the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
+We provide a concrete example of how to use `GBGKnudsenGas.jl`. Namely, we compute the Epstein drag on a sphere and compare it to analytical predictions.
+
+```@contents
+Pages = ["Epstein_drag.md"]
+```
+
+## Epstein drag
+
+Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium with temperature ``T``
+
+Our goal is to calculate the drag excerted on the sphere by the flow.
+
+
+per-collision change in particle velocity, $\langle \Delta \boldsymbol{v} \rangle_\text{c}$. Ensemble averages are denoted by angle brackets, $\langle {\cdot} \rangle$; the corresponding fluctuating parts are denoted with primes ${\cdot}'$. The index $\text{c}$ indicates averaging over the particles that actually collide with the sphere. In standard notation for conditional averages,
 
 ```math
 \langle \Delta \boldsymbol{v} \rangle_\text{c} = \langle \boldsymbol{v}_\text{after} - \boldsymbol{v}_\text{before} | \text{particle has collided} \rangle,
@@ -17,6 +29,8 @@ We want to check Epstein's 1924 calculation that $`\langle \Delta \boldsymbol{v}
 ```
 
 with $\delta = 1$ for specular collisions. In this form this relation can be obtained who knows how. See also the original paper: Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases," _Physical Review,_ 23.6 (1924), 710.
+
+## Code for Monte Carlo calcualtion of the Epstein drag
 
 Full code of this computation is available in `examples/epstein_sphere.jl`.
 
