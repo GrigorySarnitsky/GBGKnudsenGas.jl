@@ -16,9 +16,9 @@ makedocs(
   modules  = [GBGKnudsenGas],
   format   = Documenter.HTML(),
   pages    = [
-    "Home"         => "index.md",
-    "Epstein drag" => "Epstein_drag.md",
-    "API"          => "api.md"
+    "Home"                  => "index.md",
+    "Example: Epstein drag" => "Epstein_drag.md",
+    "API"                   => "api.md"
   ],
 )
 
