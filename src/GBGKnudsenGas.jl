@@ -12,7 +12,7 @@ module GBGKnudsenGas
 
 
 export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, CompoundBodyDynamic,
- collide_with_body, get_initial_particle_state
+ collide_with_body, sample_particle_state_uniform_flow
 
 
 using StaticArrays
@@ -246,22 +246,22 @@ function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)::Uni
   return collide_with_body(particle, helicoid.elements)
 end
 
-
 """
-    get_initial_particle_state(mean_v, std_v, domain_radius) -> Particle
+    sample_particle_state_uniform_flow(mean_v, std_v, domain_radius) -> Particle
 
 Sample an initial particle state for a gas in thermal equilibrium flowing past a body:
 
-* The initial position `Particle.x` is drawn uniformly on the sphere of radius `domain_radius` centered at the origin `[0.0, 0.0, 0.0]`.
 * The velocity `Particle.v` is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`.
+* The initial position `Particle.x` is drawn uniformly on the disk of radius `domain_radius` that is... 
 * The time `Particle.t` is set to `0.0`.
 """
-function get_initial_particle_state(mean_v, std_v, domain_radius)
-  ϕ = 2 * π * rand()
-  θ = acos(2 * rand() - 1.0)
-  x = domain_radius * SA[sin(θ)*cos(ϕ), sin(θ)*sin(ϕ), cos(θ)]
+function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   v = std_v * SA[randn(), randn(), randn()] + mean_v
-  Particle(v, x, 0.0)
+  e_v = normalize(v)
+  a = SA[randn(), randn(), randn()]
+  b = normalize(a - (a ⋅ e_v) * e_v)
+  x = -e_v * domain_radius + b * √rand() * domain_radius
+  return Particle(v, x, 0.0)
 end
 
 end # module GBGKnudsenGas

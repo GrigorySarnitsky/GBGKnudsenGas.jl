@@ -24,5 +24,5 @@ IsotropicHelicoid
 
 ```@docs
 collide_with_body
-get_initial_particle_state
+sample_particle_state_uniform_flow
 ```
