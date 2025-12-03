@@ -21,24 +21,27 @@ The Mach number $\text{Ma}$ is
 ```math
 \text{Ma} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{c} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{\sigma_v \sqrt \gamma}.
 ```
-
-The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ and directed opposite direction to $\langle \boldsymbol v \rangle_\infty$. Let the sphere radius be $r$. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$
+The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ directed opposite to $\langle \boldsymbol v \rangle_\infty$. Let the sphere radius be $r$. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$ is
 ```math
-F_\text{drag, Epstein (1924)} = \frac{8}{3} \sqrt{2 π \gamma} \, \rho c^2 r^2 \, \text{Ma},
+F_\text{drag, Epstein (1924)}
+= \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \| \langle \boldsymbol v \rangle_\infty \|
+= \frac{8}{3} \sqrt{2 \pi} \sigma_v^2 \rho r^2 \sqrt{\gamma} \text{Ma},
 ```
 see the papers
 
-* Epstein, Paul S. "On the resistance experienced by spheres in their motion through gases," _Physical Review,_ 23.6 (1924), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
-* 
+* Epstein, Paul S. (1924). "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23(6), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
+* Li, Zhigang, and Wang, Hai (2003). "Drag force, diffusion coefficient, and electric mobility of small particles. I. Theory applicable to the free-molecule regime." _Physical Review E,_ 68(6), 061206, [10.1103/PhysRevE.68.061206](https://doi.org/10.1103/PhysRevE.68.061206)
 
-For arbitrary Mach numbers, a good approximation of $F_\text{drag}$ was given by Kwok (1975):
+For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
 ```math
-F_\text{drag, Kwok (1975)} = F_\text{drag, Epstein (1924)} \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2},
+F_\text{drag, Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2} \, F_\text{drag, Epstein (1924)},
 ```
-see the original paper
-* Kwok
+see the papers
+* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365.
+* Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
-Kwok's formula. Finally, the exact form
+Kwok's formula has quite a good accuracy, withing 1% of the exact expression. The exact formula for $F_\text{drag}$ by Baines et al. (1965), but we won't use it, see
+* Baines
 
 ## Monte Carlo calcualtion of the Epstein drag with `GBGKnudsenGas.jl`
 
