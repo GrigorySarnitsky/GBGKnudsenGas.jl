@@ -87,6 +87,8 @@ Figuring out the integral
 \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
 ```
 
+![integration scheme](integration_scheme.svg)
+
 ## Complete example: Epstein drag
 
 We provide a concrete example of how to use `GBGKnudsenGas.jl` by calculate the drag excerted on a sphere by a uniform flow of Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
