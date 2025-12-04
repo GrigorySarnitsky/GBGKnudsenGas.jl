@@ -34,18 +34,23 @@ see the papers
 
 For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
 ```math
-F_\text{drag, Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \text{Ma}^2} \, F_\text{drag, Epstein (1924)},
+F_\text{drag, Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2} \, F_\text{drag, Epstein (1924)},
 ```
 see the papers
 * Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
 * Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
 Kwok's formula is accurate within 1% of the exact expression. The exact formula for $F_\text{drag}$ by Baines et al. (1965), but we won't use it, see
-* Baines
+* Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
-## Monte Carlo calcualtion of the Epstein drag with `GBGKnudsenGas.jl`
 
-Full code of this computation is available in `examples/epstein_sphere.jl`.
+## Monte Carlo calculations of the Epstein drag with `GBGKnudsenGas.jl`
+
+Full code of this computation is available in `examples/epstein_drag.jl`.
+
+```math
+\int
+```
 
 We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of our Cartesian coordinate system:
 
@@ -56,21 +61,9 @@ using GBGKnudsenGas
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Next, we need to generate the initial state of the gas particles before they hit the sphere. The gas is at thermal equilibrium, moving past the sphere with the mean flow velocity $`\langle \boldsymbol{v} \rangle_\infty`$ (denoted `mean_v` in code). Instead of temperature, we specify the standard deviation $`\sigma_{v, \infty}`$,
+Next, we need to generate the initial state of the gas particles before they hit the sphere. We need to sample the ...
 
-```math
- \sigma_{v, \infty} = \sqrt{\frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty},
-```
- 
- of particle velocities far away from the sphere (denoted `std_v` in code). Assuming a monotomic gas, the speed of sound is $c = \sqrt{5/3} \sigma_{v, \infty}$, and the Mach number $\text{Ma}$ of the flow is
-
-```math
-\text{Ma} = \sqrt{\frac{3}{5}} \frac{\| \langle \boldsymbol{v} \rangle_\infty \|}{\sigma_{v, \infty}}.
-```
-
-We initially place all particles on the boundary of a spherical domain of radius `domain_radius`, which should be sufficiently larger than the unit radius of `epstein_sphere`. Later we set `domain_radius` to `20`.
-
-Thus defined initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However, we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution until it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
+This initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However, we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution until it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
 
 
 ```julia
@@ -127,20 +120,4 @@ for (Δv, Ma) in zip(mean_Δv_s, Ma_s)
 end
 ```
 
-This should print something like
-
-```
-105.765674 seconds (758.63 k allocations: 1.079 GiB, 0.17% gc time, 1.02% compilation time)
-Ma = 0.0,	 δ = Inf
-Ma = 0.33,	 δ = 0.9967
-Ma = 0.67,	 δ = 1.00221
-Ma = 1.0,	 δ = 0.99963
-Ma = 1.33,	 δ = 0.99864
-Ma = 1.67,	 δ = 1.00079
-Ma = 2.0,	 δ = 0.99864
-Ma = 2.33,	 δ = 0.99994
-Ma = 2.67,	 δ = 1.00015
-Ma = 3.0,	 δ = 1.00037
-```
-
-As expected, $\delta \approx 1$ and is independent of the Mach number.
+![Epstein drag plot](Epstein_drag.svg)
