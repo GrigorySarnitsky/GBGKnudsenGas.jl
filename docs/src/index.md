@@ -34,6 +34,8 @@ using GBGKnudsenGas
 
 ## Using GBGKnudsenGas.jl
 
+### Basic components
+
 The package has three components: the gas particle (type `Particle`), the body past which the gas flows (type `Body`), and the function that calculates the collision between the two (`collide_with_body`). 
 
 The state of a gas particle is represented by the type `Particle` with a constructor
@@ -81,15 +83,25 @@ As expected, the collision occurs at the surface of the sphere, reverses the fir
 
 Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the full API reference at the end.
 
-## Unifrom flow of gas at thermal equlibrium
+### Uniform flow of gas at thermal equilibrium
 
 Figuring out the integral
 
 ```math
-\int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int_ H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
+f_\infty(\boldsymbol v_0) = \exp \frac{\boldsymbol v' \cdot \boldsymbol v'}{}
+```
+
+Consider force $\boldsymbol{F}$ that the flowing gas exerts on the body. It can be calculated as
+
+```math
+\boldsymbol{F} = \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v)} \rho \Delta \boldsymbol v(\boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] \| \boldsymbol v_0 \| f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0
 ```
 
 ![integration scheme](integration_scheme.svg)
+
+```math
+\int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v)} H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
+```
 
 ## Complete example: Epstein drag
 
