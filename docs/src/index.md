@@ -34,7 +34,7 @@ using GBGKnudsenGas
 
 ## Using GBGKnudsenGas.jl
 
-The package at its core provides functionality to calculate collisions of a single gas particle with a given body. The user is expected to build his own ensemble to model the flow of interest and the forces that it exerts on the body. First we describe how to use `GBGKnudsenGas.jl` to calculate the single particle dynamics and then we show demonstrate how one can calculate ensemble averages for a special case of a uniform gas flow at thermal equilibrium. In addition, there is a [separate page](Epstein_drag.md) exemplifying the calculation of Epstein drag on a sphere.
+The package at its core provides functionality to calculate collisions of a single gas particle with a given body. The user is expected to build his own ensemble to model the flow of interest and the forces that it exerts on the body. First we describe how to use `GBGKnudsenGas.jl` to calculate the single particle dynamics and then we demonstrate how one computes ensemble averages for a special case of a uniform gas flow at thermal equilibrium. In addition, there is a [separate page](Epstein_drag.md) exemplifying the calculation of Epstein drag on a sphere.
 
 ### Single particle dynamics
 
@@ -83,16 +83,20 @@ Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
 
 As expected, the collision occurs at the surface of the sphere, reverses the first velocity component of the particle, and takes `9.0` units of time to happen.
 
-Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the [full API reference.](api.md)
+Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these see the [full API reference.](api.md)
 
 ### Simulating flow of gas in thermal equilibrium past a body
 
-Consider a flow of a Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v \rangle_\infty$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the respective fluctuating parts.
-
- with molecular mass $m$, unperturbed (fa) concentration $n$ and temperature $T$. The probability density function of its molecular velocity.
+Consider a flow of Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the respective fluctuating parts. Before the collision with the body, the initial particle velocity $\boldsymbol v_0$ has the Maxwell-Boltzmann probability density function $f(\boldsymbol v_0)$:
 
 ```math
-f_\infty(\boldsymbol v_0) = \exp \frac{\boldsymbol v' \cdot \boldsymbol v'}{}
+f(\boldsymbol v_0) = \sqrt{\frac{1}{}} \exp \frac{\boldsymbol v_0' \cdot \boldsymbol v_0'}{\sigma_v^2}
+```
+
+with
+
+```math
+\sigma_v = 
 ```
 
 Consider force $\boldsymbol{F}$ that the flowing gas exerts on the body. It can be calculated as
@@ -107,12 +111,12 @@ Consider force $\boldsymbol{F}$ that the flowing gas exerts on the body. It can 
 \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v)} H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
 ```
 
-## Complete example: Epstein drag
+### Complete example: Epstein drag
 
 We provide a concrete example of how to use `GBGKnudsenGas.jl` by calculate the drag excerted on a sphere by a uniform flow of Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
 
 
-## Extending the library
+## Adding new kinds of bodies
 
 To add another kind of body, you define a new body type (e.g. `Ellipsoid`) and implement the corresponding `collide_with_body` method:
 
