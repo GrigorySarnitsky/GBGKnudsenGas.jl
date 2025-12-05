@@ -34,9 +34,11 @@ using GBGKnudsenGas
 
 ## Using GBGKnudsenGas.jl
 
-### Basic components
+The package at its core provides functionality to calculate collisions of a single gas particle with a given body. The user is expected to build his own ensemble to model the flow of interest and the forces that it exerts on the body. First we describe how to use `GBGKnudsenGas.jl` to calculate the single particle dynamics and then we show demonstrate how one can calculate ensemble averages for a special case of a uniform gas flow at thermal equilibrium. In addition, there is a [separate page](Epstein_drag.md) exemplifying the calculation of Epstein drag on a sphere.
 
-The package has three components: the gas particle (type `Particle`), the body past which the gas flows (type `Body`), and the function that calculates the collision between the two (`collide_with_body`). 
+### Single particle dynamics
+
+The package describes single-particle dynamics via the three components: the gas particle (type `Particle`), the body past which the gas flows (type `Body`), and the function that calculates the collision between the two (`collide_with_body`). 
 
 The state of a gas particle is represented by the type `Particle` with a constructor
 
@@ -81,11 +83,13 @@ Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
 
 As expected, the collision occurs at the surface of the sphere, reverses the first velocity component of the particle, and takes `9.0` units of time to happen.
 
-Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the full API reference at the end.
+Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the [full API reference.](api.md)
 
-### Uniform flow of gas at thermal equilibrium
+### Simulating flow of gas in thermal equilibrium past a body
 
-Figuring out the integral
+Consider a flow of a Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v \rangle_\infty$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the respective fluctuating parts.
+
+ with molecular mass $m$, unperturbed (fa) concentration $n$ and temperature $T$. The probability density function of its molecular velocity.
 
 ```math
 f_\infty(\boldsymbol v_0) = \exp \frac{\boldsymbol v' \cdot \boldsymbol v'}{}
