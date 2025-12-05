@@ -81,10 +81,12 @@ As expected, the collision occurs at the surface of the sphere, reverses the fir
 
 Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these and the rest of the features, see the full API reference at the end.
 
+## Unifrom flow of gas at thermal equlibrium
+
 Figuring out the integral
 
 ```math
-\int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
+\int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int_ H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
 ```
 
 ![integration scheme](integration_scheme.svg)
