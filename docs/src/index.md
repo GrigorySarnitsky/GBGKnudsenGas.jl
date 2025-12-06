@@ -34,11 +34,11 @@ using GBGKnudsenGas
 
 ## Using GBGKnudsenGas.jl
 
-The package at its core provides functionality to calculate collisions of a single gas particle with a given body. The user is expected to build his own ensemble to model the flow of interest and the forces that it exerts on the body. First we describe how to use `GBGKnudsenGas.jl` to calculate the single particle dynamics and then we demonstrate how one computes ensemble averages for a special case of a uniform gas flow at thermal equilibrium. In addition, there is a [separate page](Epstein_drag.md) exemplifying the calculation of Epstein drag on a sphere.
+At its core, the package provides functionality to calculate collisions between a single gas particle and a given body. Users are expected to build their own ensembles to model the flow of interest. First, we describe how to use `GBGKnudsenGas.jl` to calculate the dynamics of a single particle; then we demonstrate how to compute ensemble averages for the special case of a uniform gas flow in thermal equilibrium. In addition, a [separate page](Epstein_drag.md) illustrates the calculation of Epstein drag on a sphere.
 
 ### Single particle dynamics
 
-The package describes single-particle dynamics via the three components: the gas particle (type `Particle`), the body past which the gas flows (type `Body`), and the function that calculates the collision between the two (`collide_with_body`). 
+The package describes single-particle dynamics through three components: a gas particle (type `Particle`), a body with which the particle interacts (type `Body`), and a function that computes their collision (`collide_with_body`).
 
 The state of a gas particle is represented by the type `Particle` with a constructor
 
@@ -46,7 +46,7 @@ The state of a gas particle is represented by the type `Particle` with a constru
 Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
 ```
 
-where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t` Note that we use `StaticArrays.jl` to represent the vectors `v` and `x`. For example, let's create a particle `p` that time $t = 0$ has position $(-10, 0, 0)$ and velocity $(1, 0, 0)$:
+where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t` Note that we use `StaticArrays.jl` to represent the vectors `v` and `x`. For example, let's create a particle `p` that at time $t = 0$ has velocity $(1, 0, 0)$ and position $(-10, 0, 0)$:
 
 ```julia
 using StaticArrays
@@ -58,17 +58,16 @@ p = Particle(SA[1.0, 0.0, 0.0], SA[-10.0, 0.0, 0.0], 0.0)
 Next, bodies immersed in the Knudsen gas are represented by an abstract supertype `Body`. A concrete example is `Sphere`, which represents a sphere centered at point `x` of radius `r`:
 
 ```julia
-Sphere <: Body
 Sphere(x::SVector{3, Float64}, r::Float64)
 ```
 
-For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.x`. For now, let's make a sphere `s` of radius $1$ and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
+For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`. For now, let's make a sphere `s` of radius $1$ and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
 
 ```julia
 s = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Finally, there is a function `collide_with_body` which, given a `particle` and a `body`, returns the state of the particle immediately after the collision (at the surface of the body). If no collision occurs, it returns `nothing`.
+Finally, the function `collide_with_body` takes a `particle` and a `body`, and returns the state of the particle immediately after its collision with the body (at the surface of the body). If no collision occurs, it returns `nothing`.
 
 ```julia
 collide_with_body(particle::Particle, body::Body) -> Union{Nothing, Particle}
@@ -81,9 +80,10 @@ julia> collide_with_body(p, s)
 Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
 ```
 
-As expected, the collision occurs at the surface of the sphere, reverses the first velocity component of the particle, and takes `9.0` units of time to happen.
+As expected, the collision occurs at the surface of the sphere, reverses the first component of the particle’s velocity, and takes 9.0 units of time.
 
-Apart from spheres, `GBGKnudsenGas` provides a constructor for a cylinder without end caps (`CylinderSideWall`), as well as a way to combine simple bodies into a single body (`CompoundBody`). For these see the [full API reference.](api.md)
+Apart from spheres, `GBGKnudsenGas` also provides `CylinderSideWall`, which represents a cylinder without end caps, and `CompoundBody`,` which allows multiple simple bodies to be combined into a single composite body.  For details, see the [full API reference.](api.md)
+
 
 ### Simulating flow of gas in thermal equilibrium past a body
 
