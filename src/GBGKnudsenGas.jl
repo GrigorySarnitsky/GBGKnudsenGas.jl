@@ -20,14 +20,14 @@ using LinearAlgebra
 
 
 """
-    Particle(v::SVector{3, Float64}, x::SVector{3, Float64}, t::Float64)
+    Particle(v::SVector{3, T}, x::SVector{3, T}, t::T) where {T<:Real}
 
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 """
-struct Particle
-  v::SVector{3, Float64}
-  x::SVector{3, Float64}
-  t::Float64
+struct Particle{T<:Real}
+  v::SVector{3, T}
+  x::SVector{3, T}
+  t::T
 end
 
 
@@ -118,31 +118,6 @@ end
 
 
 """
-    CompoundBodyDynamic <: Body
-    CompoundBodyDynamic(bodies::Array{Body, 1})
-
-A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
-
-This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
-"""
-struct CompoundBodyDynamic <: Body
-  bodies::Array{Body, 1}
-end
-
-function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)::Union{Nothing, Particle}
-  nearest_collision_particle::Union{Nothing, Particle} = nothing
-  nearest_collision_t::Float64 = Inf
-  for body in compound_body.bodies
-    collided_particle = collide_with_body(particle, body)
-    if collided_particle !== nothing && collided_particle.t < nearest_collision_t
-      nearest_collision_t = collided_particle.t
-      nearest_collision_particle = collided_particle
-    end
-  end
-  return nearest_collision_particle
-end
-
-"""
     CompoundBody <: Body
     CompoundBody{T<:Tuple{Vararg{<:Body}}}
 
@@ -183,6 +158,28 @@ end
 
 function collide_with_body(particle::Particle, compound_body::CompoundBody)
   return earliest_collision(particle, compound_body.bodies)
+end
+
+
+"""
+    CompoundBodyDynamic <: Body
+    CompoundBodyDynamic(bodies::Array{Body, 1})
+
+A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
+
+This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
+"""
+struct CompoundBodyDynamic <: Body
+  bodies::Array{Body, 1}
+end
+
+function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)::Union{Nothing, Particle}
+  nearest_collision_particle::Union{Nothing, Particle} = nothing
+  for body in compound_body.bodies
+    collided_particle = collide_with_body(particle, body)
+    nearest_collision_particle = earlier(nearest_collision_particle, collided_particle)
+  end
+  return nearest_collision_particle
 end
 
 
@@ -256,12 +253,13 @@ Sample an initial particle state for a gas in thermal equilibrium flowing past a
 * The time `Particle.t` is set to `0.0`.
 """
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
-  v = std_v * SA[randn(), randn(), randn()] + mean_v
+  v = std_v * SA[randn(), randn(), randn()] .+ mean_v
   e_v = normalize(v)
   a = SA[randn(), randn(), randn()]
-  b = normalize(a - (a ⋅ e_v) * e_v)
-  x = -e_v * domain_radius + b * √rand() * domain_radius
-  return Particle(v, x, 0.0)
+  b = normalize(a .- (a ⋅ e_v) * e_v)
+  x = -e_v * domain_radius .+ b * √rand() * domain_radius
+  T = eltype(v)
+  return Particle(v, x, zero(T))
 end
 
 end # module GBGKnudsenGas

@@ -64,7 +64,7 @@ $julia epstein_drag.jl
 
 ### Computing $\boldsymbol F$
 
-We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of our Cartesian coordinate system:
+We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of the Cartesian coordinate system:
 
 ```julia
 using StaticArrays
@@ -128,7 +128,7 @@ $\delta$:
 
 ```julia
 mean_v_norms = range(0.0, 3.0, 20)
-drag_values = @time drag_MC.(Ref(epstein_sphere), mean_v_norms, 1.0, 2.0, 10^6)
+drag_values = drag_MC.(Ref(epstein_sphere), mean_v_norms, 1.0, 2.0, 10^6)
 
 drag_Epstein(mean_v_norm, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v_norm
 drag_Kwok(mean_v_norm, std_v) = drag_Epstein(mean_v_norm, std_v) * √(1 + 9 * π / 128 * (mean_v_norm / std_v)^2)
