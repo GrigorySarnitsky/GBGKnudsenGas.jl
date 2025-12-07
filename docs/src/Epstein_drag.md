@@ -9,24 +9,34 @@ Pages = ["Epstein_drag.md"]
 
 ## Epstein drag
 
-Consider a flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v \rangle_\infty$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the respective fluctuating parts. The speed of sound $c$ in the gas is defined through the adiabatic index $\gamma$ and mass $m$ of an individual gas particle:
+Consider stationary flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+
 ```math
-c = \sqrt{\gamma \frac{k_\text{B} T}{m}}.
+f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
 ```
-For a monatomic gas $\gamma = 5/3$. In addition, we can define the standard deviation of an individual velocity component $\sigma_v$.
+where
+
 ```math
-  \sigma_v = \frac{1}{3} \langle \boldsymbol v' \cdot \boldsymbol v' \rangle_\infty = \sqrt{\frac{k_\text{B} T}{m}} = \frac{c}{\sqrt{\gamma}}.
+\sigma_v = \sqrt{\frac{k_\text{B} T}{m}},
 ```
-The Mach number $\text{Ma}$ is
+and $m$ is the mass of a single particle. The speed of sound $c$ in the gas is defined through the adiabatic index $\gamma$:
+
 ```math
-\text{Ma} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{c} = \frac{\| \langle \boldsymbol v \rangle_\infty \|}{\sigma_v \sqrt \gamma}.
+c = \sqrt{\gamma \frac{k_\text{B} T}{m}} = \sqrt \gamma \sigma_v.
 ```
-The gas flow exerts a drag force on the sphere of magnitude $F_\text{drag}$ directed opposite to $\langle \boldsymbol v \rangle_\infty$. Let the sphere radius be $r$. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$ is
+For a monatomic gas $\gamma = 5/3$. The Mach number $\text{Ma}$ is
+
 ```math
-F_\text{drag, Epstein (1924)}
-= \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \| \langle \boldsymbol v \rangle_\infty \|
-= \frac{8}{3} \sqrt{2 \pi} \sigma_v^2 \rho r^2 \sqrt{\gamma} \text{Ma},
+\text{Ma} = \frac{\| \langle \boldsymbol v_0 \rangle \|}{c} = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v \sqrt \gamma}.
 ```
+
+Let $\boldsymbol F$ be the force that the flowing gas exerts on the sphere and $r$ be the radius of the sphere. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$ is
+
+```math
+\boldsymbol F_\text{Epstein (1924)}
+= - \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,
+```
+
 see the papers
 
 * Epstein, Paul S. (1924). "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23(6), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
@@ -34,7 +44,7 @@ see the papers
 
 For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
 ```math
-F_\text{drag, Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2} \, F_\text{drag, Epstein (1924)},
+\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2} \, \boldsymbol F_\text{Epstein (1924)},
 ```
 see the papers
 * Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
