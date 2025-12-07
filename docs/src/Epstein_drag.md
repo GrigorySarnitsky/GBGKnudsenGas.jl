@@ -59,8 +59,10 @@ Kwok's formula is accurate within 1% of the exact expression. The exact formula 
 Full code of this computation is available in `examples/epstein_drag.jl`. To launch it, execute
 
 ```console
-julia epstein_drag.jl
+$julia epstein_drag.jl
 ```
+
+### Computing $\boldsymbol F$
 
 We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of our Cartesian coordinate system:
 
@@ -78,12 +80,14 @@ This initial state of a gas particle can be obtained with `get_initial_particle_
 
 ```julia
 function find_single_collision(body, mean_v, std_v, domain_radius)
+  missed_particles_number = 0
   while true
-    particle_before = get_initial_particle_state(mean_v, std_v, domain_radius)
+    particle_before = sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
     particle_after  = collide_with_body(particle_before, body)
     if !isnothing(particle_after)
-      return particle_before, particle_after
+      return particle_before, particle_after, missed_particles_number
     end
+    missed_particles_number += 1
   end 
 end
 ```
@@ -96,10 +100,11 @@ using Base.Threads
 function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
   particles_before_collision = Array{Particle, 1}(undef, sample_size)
   particles_after_collision  = Array{Particle, 1}(undef, sample_size)
+  missed_particles_numbers   = Array{Int64,    1}(undef, sample_size)
   @threads for i in 1:sample_size
-    particles_before_collision[i], particles_after_collision[i] = find_single_collision(body, mean_v, std_v, domain_radius)
+    particles_before_collision[i], particles_after_collision[i], missed_particles_numbers[i] = find_single_collision(body, mean_v, std_v, domain_radius)
   end
-  return particles_before_collision, particles_after_collision
+  return particles_before_collision, particles_after_collision, missed_particles_numbers
 end
 ```
 
@@ -107,14 +112,14 @@ Finally, we write a function to calculate $`\langle \Delta \boldsymbol{v} \rangl
 
 ```julia
 using Statistics
+using LinearAlgebra
 
-function mean_Δv_per_collision(body, Ma)
-  std_v = 1.0
-  mean_v = SA[Ma * std_v * √(5/3), 0.0, 0.0]
-  domain_radius = 20.0
-  sample_size = 10^6
-  particles_before_collision, particles_after_collision = run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-  return mean(p_a.v - p_b.v for (p_b, p_a) in zip(particles_before_collision, particles_after_collision))
+function drag_MC(body, mean_v_norm, std_v, domain_radius, sample_size)
+  mean_v = SA[mean_v_norm, 0.0, 0.0]
+  particles_before_collision, particles_after_collision, missed_particles_numbers = run_simulation(body, mean_v, std_v, domain_radius, sample_size)
+  collision_probability = sample_size / (sum(missed_particles_numbers) + sample_size)
+  f = -mean(norm(p_b.v) * (p_a.v - p_b.v) for (p_b, p_a) in zip(particles_before_collision, particles_after_collision)) * collision_probability * π * domain_radius^2
+  return f[1]
 end
 ```
 
@@ -122,12 +127,36 @@ We call it for our `epstein_sphere` and 10 different values of the Mach number, 
 $\delta$:
 
 ```julia
-Ma_s = range(0.0, 3.0, 10)
-mean_Δv_s = @time mean_Δv_per_collision.(Ref(epstein_sphere), Ma_s)
+mean_v_norms = range(0.0, 3.0, 20)
+drag_values = @time drag_MC.(Ref(epstein_sphere), mean_v_norms, 1.0, 2.0, 10^6)
 
-for (Δv, Ma) in zip(mean_Δv_s, Ma_s)
-  println("Ma = ", round(Ma, digits = 2), ",\t δ = ", -round(Δv[1] / (√(5/3) * Ma), digits = 5))
-end
+drag_Epstein(mean_v_norm, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v_norm
+drag_Kwok(mean_v_norm, std_v) = drag_Epstein(mean_v_norm, std_v) * √(1 + 9 * π / 128 * (mean_v_norm / std_v)^2)
+
+
+plot(
+  mean_v_norms, [drag_Epstein.(mean_v_norms, 1.0), drag_Kwok.(mean_v_norms, 1.0), drag_values] ./ (8/3 * √(2 * π) * 1.0 * epstein_sphere.r^2),
+  label = ["Epstein (1924)" "Kwok (1975)" "GBGKnudsenGas.jl"],
+  color = [:black 1 1], linestyle = [:solid :solid :dash],
+  ylabel = L"‖\! 𝑭\ ‖ / (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
+  xlabel = L"‖\! 𝒗\ ‖ / σ_v", xticks = 0:0.5:3
+)
+
+display(plot!())
+
+savefig("Epstein_drag.svg")
 ```
 
 ![Epstein drag plot](Epstein_drag.svg)
+
+### Computing Epstein coefficient
+
+```julia
+using ForwardDiff
+
+epstein_coefficient_MC = ForwardDiff.derivative(mean_v_norm -> drag_MC(epstein_sphere, mean_v_norm, 1.0, 2.0, 10^6), mean_v_norm)
+
+epstein_coefficient = 8/3 * √(2 * π) *  epstein_sphere.r^2
+
+println(epstein_coefficient_MC / epstein_coefficient)
+```
