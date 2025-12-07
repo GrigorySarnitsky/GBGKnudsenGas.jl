@@ -82,30 +82,38 @@ Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
 
 As expected, the collision occurs at the surface of the sphere, reverses the first component of the particle’s velocity, and takes 9.0 units of time.
 
-Apart from spheres, `GBGKnudsenGas` also provides `CylinderSideWall`, which represents a cylinder without end caps, and `CompoundBody`,` which allows multiple simple bodies to be combined into a single composite body.  For details, see the [full API reference.](api.md)
+Apart from spheres, `GBGKnudsenGas` also provides `CylinderSideWall`, which represents a cylinder without end caps, and `CompoundBody`, which allows multiple simple bodies to be combined into a single composite body. For details, see the [full API reference.](api.md)
 
 
-### Simulating flow of gas in thermal equilibrium past a body
+### Simulating stationary flow of gas in thermal equilibrium past a body
 
-Consider a flow of Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium with unperturbed (at infinity) temperature $T$, density $\rho$ and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the respective fluctuating parts. Before the collision with the body, the initial particle velocity $\boldsymbol v_0$ has the Maxwell-Boltzmann probability density function $f(\boldsymbol v_0)$:
-
-```math
-f(\boldsymbol v_0) = \sqrt{\frac{1}{}} \exp \frac{\boldsymbol v_0' \cdot \boldsymbol v_0'}{\sigma_v^2}
-```
-
-with
+Consider stationary flow of a Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
-\sigma_v = 
+f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
 ```
 
-Consider force $\boldsymbol{F}$ that the flowing gas exerts on the body. It can be calculated as
+where
 
 ```math
-\boldsymbol{F} = \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v)} \rho \Delta \boldsymbol v(\boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] \| \boldsymbol v_0 \| f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0
+\sigma_v = \sqrt{\frac{k_\text{B} T}{m}}.
 ```
+We now calculate the force $\boldsymbol{F}$ that the flowing gas exerts on the body. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that starts with velocity $\boldsymbol v_0$ at position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as the following integral in the velocity and physical spaces:
+
+```math
+\boldsymbol{F} = - \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v_0)} \rho \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] \| \boldsymbol v_0 \| f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0.
+```
+Here integration in physical space for a given $\boldsymbol v_0$ proceeds over the disk $D(\boldsymbol v_0)$ of radius $r_\text{dom}$, positioned perpendicular to $\boldsymbol v_0$ at a distance $r_\text{dom}$ from the domain center, see the illustration
 
 ![integration scheme](integration_scheme.svg)
+
+We can approximate 
+
+```math
+\boldsymbol F = - \rho\sum_\text{ensemble} \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \|
+```
+
+
 
 ```math
 \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v)} H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
