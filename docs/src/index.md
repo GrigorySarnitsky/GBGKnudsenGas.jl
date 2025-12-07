@@ -126,7 +126,7 @@ A similar technique can be used to compute other physical quantities.
 
 ### Complete example: Epstein drag
 
-We provide a concrete example of how to use `GBGKnudsenGas.jl` by calculate the drag excerted on a sphere by uniform flow of a Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
+We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` by calculating the drag exerted on a sphere by a uniform flow of a Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
 
 
 ## Adding new kinds of bodies
