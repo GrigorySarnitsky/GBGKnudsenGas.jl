@@ -98,19 +98,20 @@ where
 ```math
 \sigma_v = \sqrt{\frac{k_\text{B} T}{m}}.
 ```
-We now calculate the force $\boldsymbol{F}$ that the flowing gas exerts on the body. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as the following integral in the velocity and physical spaces:
+
+We now describe a procedure for calculating physical quantities associated with the flow of a Knudsen gas past a body. We use the force $\boldsymbol{F}$ that the flowing gas exerts on the body as an archetypical example. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as an integral over in the velocity and physical spaces:
 
 ```math
-\boldsymbol{F} = - \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v_0)} \rho \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] \| \boldsymbol v_0 \| f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0.
+\boldsymbol{F} = - \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v_0)} \rho  \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0.
 ```
-Here integration in physical space for a given $\boldsymbol v_0$ proceeds over the disk $D(\boldsymbol v_0)$ of radius $r_\text{dom}$, positioned perpendicular to $\boldsymbol v_0$ at a distance $r_\text{dom}$ from the domain center, as illustrated below:
+For a given $\boldsymbol v_0$, the inner integration is taken over the disk $D(\boldsymbol v_0)$ of radius  $r_\text{dom}$, oriented perpendicular to $\boldsymbol v_0$ and located at a distance $r_\text{dom}$ from the domain center, as illustrated below:
 
 ![integration scheme](integration_scheme.svg)
 
-We can approximate 
+We can approximate this integral via Monte Carlo, where 
 
 ```math
-\boldsymbol F = - \rho\sum_\text{ensemble} \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \|
+\boldsymbol F = - \rho\sum_{\mathclap{\text{ensemble}}} \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \|
 ```
 
 
