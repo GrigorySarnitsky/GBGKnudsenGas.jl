@@ -44,22 +44,22 @@ see the papers
 
 For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
 ```math
-\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \gamma \text{Ma}^2} \, \boldsymbol F_\text{Epstein (1924)},
+\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},
 ```
 see the papers
 * Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
 * Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
-Kwok's formula is accurate within 1% of the exact expression. The exact formula for $F_\text{drag}$ by Baines et al. (1965), but we won't use it, see
+Kwok's formula is accurate within 1% of the exact expression. The exact formula for $\boldsymbol F$ by Baines et al. (1965), but we won't use it, see
 * Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
 
 ## Monte Carlo calculations of the Epstein drag with `GBGKnudsenGas.jl`
 
-Full code of this computation is available in `examples/epstein_drag.jl`.
+Full code of this computation is available in `examples/epstein_drag.jl`. To launch it, execute
 
-```math
-\int
+```console
+julia epstein_drag.jl
 ```
 
 We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of our Cartesian coordinate system:
