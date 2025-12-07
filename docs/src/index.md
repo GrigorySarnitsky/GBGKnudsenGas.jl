@@ -8,7 +8,7 @@ An example demonstrating a complete flow simulation around a sphere is included.
 
 All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note that `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
-The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
+The `GBG` part in the name `GBGKnudsenGas.jl` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
 
 ## Installation
 
@@ -82,10 +82,10 @@ Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
 
 As expected, the collision occurs at the surface of the sphere, reverses the first component of the particle’s velocity, and takes 9.0 units of time.
 
-Apart from spheres, `GBGKnudsenGas` also provides `CylinderSideWall`, which represents a cylinder without end caps, and `CompoundBody`, which allows multiple simple bodies to be combined into a single composite body. For details, see the [full API reference.](api.md)
+Apart from spheres, `GBGKnudsenGas.jl` also provides `CylinderSideWall`, which represents a cylinder without end caps, and `CompoundBody`, which allows multiple simple bodies to be combined into a single composite body. For details, see the [full API reference.](api.md)
 
 
-### Simulating stationary flow of gas in thermal equilibrium past a body
+### Simulating stationary flow of a gas in thermal equilibrium past a body
 
 Consider stationary flow of a Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
@@ -108,21 +108,25 @@ For a given $\boldsymbol v_0$, the inner integration is taken over the disk $D(\
 
 ![integration scheme](integration_scheme.svg)
 
-We can approximate this integral via Monte Carlo, where 
+We evaluate the integral for $\boldsymbol F$ using a Monte Carlo method. We sample particles whose initial velocities $\boldsymbol v_0$ follow the Maxwell–Boltzmann PDF $f(\boldsymbol v_0)$, and whose initial positions are distributed uniformly over the corresponding disk $D(\boldsymbol v_0)$. With thus defined ensemble of particle, the $\boldsymbol F$ is approximated as the following ensemble average:
 
 ```math
-\boldsymbol F = - \rho\sum_{\mathclap{\text{ensemble}}} \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \|
+\boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigr>_\text{ensemble}.
 ```
 
+To generate this ensemble, `GBGKnudsenGas.jl` provides the function `sample_particle_state_uniform_flow`:
 
-
-```math
-\int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v)} H(\boldsymbol v, \boldsymbol x) \, \mathrm{d} \boldsymbol x \biggr] \| \boldsymbol v \| f(\boldsymbol v) \, \mathrm{d} \boldsymbol v
+```julia
+sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
 ```
+
+Given $\langle \boldsymbol v_0 \rangle$ (`mean_v`), $\sigma_v$ (`std_v`) and $r_\text{dom}$ (`domain_radius`), the function returns a particle `p`, whose fields `p.v` and `p.x` follow the required distributions for $\boldsymbol v_0$ and $\boldsymbol x_0$, with `p.t` set to $0$.
+
+A similar technique can be used to compute other physical quantities.
 
 ### Complete example: Epstein drag
 
-We provide a concrete example of how to use `GBGKnudsenGas.jl` by calculate the drag excerted on a sphere by a uniform flow of Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
+We provide a concrete example of how to use `GBGKnudsenGas.jl` by calculate the drag excerted on a sphere by uniform flow of a Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
 
 
 ## Adding new kinds of bodies
