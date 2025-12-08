@@ -110,10 +110,10 @@ For a given $\boldsymbol v_0$, the inner integration is taken over the disk $D(\
 
 ![integration scheme](integration_scheme.svg)
 
-We evaluate the integral for $\boldsymbol F$ using a Monte Carlo method. We sample particles whose initial velocities $\boldsymbol v_0$ follow the Maxwell–Boltzmann PDF $f(\boldsymbol v_0)$, and whose initial positions are distributed uniformly over the corresponding disk $D(\boldsymbol v_0)$. With thus defined ensemble of particle, the $\boldsymbol F$ is approximated as the following ensemble average:
+We evaluate the integral for $\boldsymbol F$ using a Monte Carlo method. We sample particles whose initial velocities $\boldsymbol v_0$ follow the Maxwell–Boltzmann PDF $f(\boldsymbol v_0)$, and whose initial positions are distributed uniformly over the corresponding disk $D(\boldsymbol v_0)$. With thus defined ensemble of initial particle states, $\boldsymbol F$ is approximated as the following ensemble average:
 
 ```math
-\boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigr>_\text{ensemble}.
+\boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \| \boldsymbol v_0 \| \bigr>.
 ```
 
 To generate this ensemble, `GBGKnudsenGas.jl` provides the function `sample_particle_state_uniform_flow`:

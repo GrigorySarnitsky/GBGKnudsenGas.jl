@@ -50,19 +50,15 @@ see the papers
 * Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
 * Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
-Kwok's formula is accurate within 1% of the exact expression. The exact formula for $\boldsymbol F$ by Baines et al. (1965), but we won't use it, see
+Kwok's formula is accurate within 1% of the exact expression. The exact formula for $\boldsymbol F$ was given by Baines et al. (1965), but we won't use it, see
 * Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
 
-## Monte Carlo calculations of the Epstein drag with `GBGKnudsenGas.jl`
+## Monte Carlo calculation of the Epstein drag with `GBGKnudsenGas.jl`
 
-Full code of this computation is available in `examples/epstein_drag.jl`. To launch it, execute
+Full code of this computation is available in `examples/epstein_drag.jl`. For simplicity, we will be calculating the norm $\| \boldsymbol F \|$ of $\boldsymbol F$.
 
-```console
-$julia epstein_drag.jl
-```
-
-### Computing $\boldsymbol F$
+### Computing $\| \boldsymbol F \|$
 
 We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of the Cartesian coordinate system:
 
@@ -73,23 +69,36 @@ using GBGKnudsenGas
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Next, we need to generate the initial state of the gas particles before they hit the sphere. We need to sample the ...
+Next, recall from the [introduction,](index.md) that we can calculate $\| \boldsymbol F \|$ as
 
-This initial state of a gas particle can be obtained with `get_initial_particle_state(mean_v, std_v, domain_radius)`. However, we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution until it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
+```math
+\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigr> \Bigr\|,
+```
+where the ensemble average is over the particles whose initial state is sampled with the `sample_particle_state_uniform_flow` function. We rewrite it as
+
+```math
+\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigr> \Bigr\|,
+```
+
+However, we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution until it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
 
 
 ```julia
 function find_single_collision(body, mean_v, std_v, domain_radius)
   missed_particles_number = 0
+
   while true
     particle_before = sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
     particle_after  = collide_with_body(particle_before, body)
+    
     if !isnothing(particle_after)
       return particle_before, particle_after, missed_particles_number
     end
+    
     missed_particles_number += 1
   end 
 end
+
 ```
 
 To accurately estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the initial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
@@ -98,17 +107,21 @@ To accurately estimate ensemble averages, we need a large sample of particles th
 using Base.Threads
 
 function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-  particles_before_collision = Array{Particle, 1}(undef, sample_size)
-  particles_after_collision  = Array{Particle, 1}(undef, sample_size)
-  missed_particles_numbers   = Array{Int64,    1}(undef, sample_size)
+  T = eltype(mean_v)
+
+  particles_before_collision = Vector{Particle{T}}(undef, sample_size)
+  particles_after_collision  = Vector{Particle{T}}(undef, sample_size)
+  missed_particles_numbers   = Vector{Int}(undef, sample_size)
+
   @threads for i in 1:sample_size
     particles_before_collision[i], particles_after_collision[i], missed_particles_numbers[i] = find_single_collision(body, mean_v, std_v, domain_radius)
   end
+
   return particles_before_collision, particles_after_collision, missed_particles_numbers
 end
 ```
 
-Finally, we write a function to calculate $`\langle \Delta \boldsymbol{v} \rangle_\text{c}`$ for the specified Mach number `Ma`:
+Finally, we write a function to calculate $\| \boldsymbol F \|$ for the specified Mach number $\| \langle \boldsymbol v_0 \rangle \|$:
 
 ```julia
 using Statistics
@@ -116,15 +129,18 @@ using LinearAlgebra
 
 function drag_MC(body, mean_v_norm, std_v, domain_radius, sample_size)
   mean_v = SA[mean_v_norm, 0.0, 0.0]
+  
   particles_before_collision, particles_after_collision, missed_particles_numbers = run_simulation(body, mean_v, std_v, domain_radius, sample_size)
+  
   collision_probability = sample_size / (sum(missed_particles_numbers) + sample_size)
-  f = -mean(norm(p_b.v) * (p_a.v - p_b.v) for (p_b, p_a) in zip(particles_before_collision, particles_after_collision)) * collision_probability * π * domain_radius^2
-  return f[1]
+  
+  F = -mean(norm(p_b.v) * (p_a.v - p_b.v) for (p_b, p_a) in zip(particles_before_collision, particles_after_collision)) * collision_probability * π * domain_radius^2
+  
+  return F[1]
 end
 ```
 
-We call it for our `epstein_sphere` and 10 different values of the Mach number, and calculate Epstein’s 
-$\delta$:
+We call it for our `epstein_sphere` and 20 different values $\| \langle \boldsymbol v_0 \rangle \|$. Then we plot the results along with the analytical predictions of Epstein (1924) and Kwok (1975):
 
 ```julia
 mean_v_norms = range(0.0, 3.0, 20)
