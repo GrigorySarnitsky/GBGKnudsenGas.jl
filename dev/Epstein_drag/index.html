@@ -3,7 +3,7 @@
 = - \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,\]</p><p>see the papers</p><ul><li>Epstein, Paul S. (1924). &quot;On the resistance experienced by spheres in their motion through gases.&quot; <em>Physical Review,</em> 23(6), 710, <a href="https://doi.org/10.1103/PhysRev.23.710">10.1103/PhysRev.23.710</a>.</li><li>Li, Zhigang, and Wang, Hai (2003). &quot;Drag force, diffusion coefficient, and electric mobility of small particles. I. Theory applicable to the free-molecule regime.&quot; <em>Physical Review E,</em> 68(6), 061206, <a href="https://doi.org/10.1103/PhysRevE.68.061206">10.1103/PhysRevE.68.061206</a></li></ul><p>For arbitrary Mach numbers, a good approximation for <span>$F_\text{drag}$</span> was given by Kwok (1975):</p><p class="math-container">\[\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},\]</p><p>see the papers</p><ul><li>Laibe, Guillaume, and Price, Daniel J. (2012). &quot;Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes.&quot; <em>Monthly Notices of the Royal Astronomical Society,</em> 420(3), 2365, <a href="https://doi.org/10.1111/j.1365-2966.2011.20201.x">10.1111/j.1365-2966.2011.20201.x</a></li><li>Kwok, Sun (1975). &quot;Radiation pressure on grains as a mechanism for mass loss in red giants.&quot; <em>Astrophysical Journal,</em> 198(6??), 583, <a href="https://doi.org/10.1086/153637">10.1086/153637</a>.</li></ul><p>Kwok&#39;s formula is accurate within 1% of the exact expression. The exact formula for <span>$\boldsymbol F$</span> was given by Baines et al. (1965), but we won&#39;t use it, see</p><ul><li>Baines, M. J., Williams, I. P., Asebiomo, A. S., &amp; Agacy, R. L. (1965). &quot;Resistance to the motion of a small sphere moving through a gas.&quot; <em>Monthly Notices of the Royal Astronomical Society,</em> 130(1), 63, <a href="https://doi.org/10.1093/mnras/130.1.63">10.1093/mnras/130.1.63</a>.</li></ul><h2 id="Monte-Carlo-calculation-of-Epstein-drag-with-GBGKnudsenGas.jl"><a class="docs-heading-anchor" href="#Monte-Carlo-calculation-of-Epstein-drag-with-GBGKnudsenGas.jl">Monte Carlo calculation of Epstein drag with <code>GBGKnudsenGas.jl</code></a><a id="Monte-Carlo-calculation-of-Epstein-drag-with-GBGKnudsenGas.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Monte-Carlo-calculation-of-Epstein-drag-with-GBGKnudsenGas.jl" title="Permalink"></a></h2><p>The full code of this computation is available in <code>examples/epstein_drag.jl</code>. For a more convinient analysis, we calculate the norm <span>$\| \boldsymbol F \|$</span> of the force vector <span>$\boldsymbol F$</span>.</p><h3 id="Computing-\\-\\boldsymbol-F-\\"><a class="docs-heading-anchor" href="#Computing-\\-\\boldsymbol-F-\\">Computing <span>$\| \boldsymbol F \|$</span></a><a id="Computing-\\-\\boldsymbol-F-\\-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-\\-\\boldsymbol-F-\\" title="Permalink"></a></h3><p>We start by defining our sphere, <code>epstein_sphere</code>, with radius <span>$1.0$</span> and center at the origin <span>$(0, 0, 0)$</span> of the Cartesian coordinate system:</p><pre><code class="language-julia hljs">using StaticArrays
 using GBGKnudsenGas
 
-epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)</code></pre><p>The calculation of <span>$\| \boldsymbol F \|$</span> is based on the statistics of the velocity increments of the gas particles. Let <span>$\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$</span> be the final velocity of a gas particle that initially had velocity <span>$\boldsymbol v_0$</span> and position <span>$\boldsymbol x_0$</span>. The velocity increment is</p><p class="math-container">\[\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0\]</p><p>Recall from the <a href="../">introduction,</a> that</p><p class="math-container">\[\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl&lt; \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \| \boldsymbol v_0 \| \bigr&gt; \Bigr\|.\]</p><p>The ensemble average is taken over particles whose initial states (<span>$\boldsymbol v_0$</span> and <span>$\boldsymbol x_0$</span>) are sampled using <code>sample_particle_state_uniform_flow</code>. Let <span>$P(\text{hit})$</span> denote the probability that a particle collides with the body. Then we can rewrite the expression for <span>$|\boldsymbol F|$</span> using the average conditioned on a collision:</p><p class="math-container">\[\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 P(\text{hit}) \Bigl\| \bigl&lt; \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigm| \text{hit} \bigr&gt; \Bigr\|.\]</p><p>To evaluate this conditional average, we first define a helper function <code>find_single_collision</code>, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments: the body (<code>body</code>), the mean velocity <span>$\langle \boldsymbol v_0 \rangle$</span> (<code>mean_v</code>), the velocity standard deviation <span>$\sigma_v$</span> (<code>std_v</code>), and the simulation domain radius <span>$r_\text{dom}$</span> (<code>domain_radius</code>). We later call this function with <code>epstein_sphere</code> as the body and <span>$r_\text{dom} = 2$</span>.</p><p>The function returns the particle’s initial state (<code>particle_before</code>), its state after the collision (<code>particle_after</code>), and the number of non-colliding samples encountered before a hit was found (<code>missed_particles_number</code>):</p><pre><code class="language-julia hljs">function find_single_collision(body, mean_v, std_v, domain_radius)
+epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)</code></pre><p>The calculation of <span>$\| \boldsymbol F \|$</span> is based on the statistics of the velocity increments of the gas particles. Let <span>$\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$</span> be the final velocity of a gas particle that initially had velocity <span>$\boldsymbol v_0$</span> and position <span>$\boldsymbol x_0$</span>. The velocity increment is</p><p class="math-container">\[\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0\]</p><p>Recall from the <a href="../">introduction,</a> that</p><p class="math-container">\[\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl&lt; \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \| \boldsymbol v_0 \| \bigr&gt; \Bigr\|.\]</p><p>The ensemble average is taken over particles whose initial states (<span>$\boldsymbol v_0$</span> and <span>$\boldsymbol x_0$</span>) are sampled using <code>sample_particle_state_uniform_flow</code>. Let <span>$P(\text{hit})$</span> denote the probability that a particle collides with the body. Then we can rewrite the expression for <span>$|\boldsymbol F|$</span> using the average conditioned on a collision:</p><p class="math-container">\[\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 P(\text{hit}) \Bigl\| \bigl&lt; \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigm| \text{hit} \bigr&gt; \Bigr\|.\]</p><p>To evaluate this conditional average, we first define a helper function <code>find_single_collision</code>, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments:</p><ul><li>the body (<code>body</code>),</li><li>the mean velocity <span>$\langle \boldsymbol v_0 \rangle$</span> (<code>mean_v</code>),</li><li>the velocity standard deviation <span>$\sigma_v$</span> (<code>std_v</code>),</li><li>the simulation domain radius <span>$r_\text{dom}$</span> (<code>domain_radius</code>), see the <a href="../">introduction.</a></li></ul><p>We later call this function with <code>epstein_sphere</code> as the body and <span>$r_\text{dom} = 2$</span>.</p><p>The function returns the particle’s initial state (<code>particle_before</code>), its state after the collision (<code>particle_after</code>), and the number of non-colliding samples encountered before a hit was found (<code>missed_particles_number</code>):</p><pre><code class="language-julia hljs">function find_single_collision(body, mean_v, std_v, domain_radius)
   missed_particles_number = 0
   
   while true
@@ -16,59 +16,56 @@ epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)</code></pre><p>The calculation o
     
     missed_particles_number += 1
   end 
-end</code></pre><p>To accurately estimate ensemble averages, we need a large sample of particles that collided with the body. The function <code>run_simulation</code> below finds <code>sample_size</code> particles (later we set <code>sample_size</code> to <code>10^6</code>) that collided with the <code>body</code> and returns two arrays, one with the initial state of the particles before the collision (<code>particles_before_collision</code>) and one with the particle states after the collision (<code>particles_after_collision</code>). The code is multithreaded to take advantage of a multi-core CPU:</p><pre><code class="language-julia hljs">using Base.Threads
-
-function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-  T = eltype(mean_v)
-
-  particles_before_collision = Vector{Particle{T}}(undef, sample_size)
-  particles_after_collision  = Vector{Particle{T}}(undef, sample_size)
-  missed_particles_numbers   = Vector{Int}(undef, sample_size)
-
-  @threads for i in 1:sample_size
-    particles_before_collision[i], particles_after_collision[i], missed_particles_numbers[i] = find_single_collision(body, mean_v, std_v, domain_radius)
-  end
-
-  return particles_before_collision, particles_after_collision, missed_particles_numbers
-end</code></pre><p>Finally, we write a function to calculate <span>$\| \boldsymbol F \|$</span> for the specified Mach number <span>$\| \langle \boldsymbol v_0 \rangle \|$</span>:</p><pre><code class="language-julia hljs">using Statistics
-using LinearAlgebra
+end</code></pre><p>Next, we present the function <code>drag_MC</code>, which computes <span>$|\boldsymbol F|$</span>. In addition to the arguments accepted by <code>sample_particle_state_uniform_flow</code>, it accepts <code>sample_size</code>, the number of particles that actually collide with the body and thus determine the accuracy of the Monte Carlo estimator. The code is multithreaded to take advantage of multi-core CPUs:</p><pre><code class="language-julia hljs">using LinearAlgebra
+using Base.Threads
 
 function drag_MC(body, mean_v_norm, std_v, domain_radius, sample_size)
   mean_v = SA[mean_v_norm, 0.0, 0.0]
-  
-  particles_before_collision, particles_after_collision, missed_particles_numbers = run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-  
-  collision_probability = sample_size / (sum(missed_particles_numbers) + sample_size)
-  
-  F = -mean(norm(p_b.v) * (p_a.v - p_b.v) for (p_b, p_a) in zip(particles_before_collision, particles_after_collision)) * collision_probability * π * domain_radius^2
-  
-  return F[1]
-end</code></pre><p>We call it for our <code>epstein_sphere</code> and 20 different values <span>$\| \langle \boldsymbol v_0 \rangle \|$</span>. Then we plot the results along with the analytical predictions of Epstein (1924) and Kwok (1975):</p><pre><code class="language-julia hljs">using Plots
+  T = eltype(mean_v)
+
+  F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
+  missed_sums = zeros(Int, nthreads())
+
+  @threads for i in 1:sample_size
+    p_b, p_a, missed = find_single_collision(body, mean_v, std_v, domain_radius)
+    tid = threadid()
+    F_sums[tid]      += norm(p_b.v) * (p_a.v - p_b.v)
+    missed_sums[tid] += missed
+  end
+
+  collision_probability = sample_size / (sample_size + sum(missed_sums))
+  F_mean = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
+
+  return F_mean[1]
+end</code></pre><p>We now call <code>drag_MC</code> for our <code>epstein_sphere</code> and for 20 different values of <span>$|\langle \boldsymbol v_0 \rangle|$</span>. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):</p><pre><code class="language-julia hljs">using Plots
 using LaTeXStrings
 
 default(;fontfamily = &quot;Computer Modern&quot;)
 
+epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
+
+const σ_v   = 1.0
+const r_dom = 2.0
+
 mean_v_norms = range(0.0, 3.0, 20)
-drag_values = drag_MC.(Ref(epstein_sphere), mean_v_norms, 1.0, 2.0, 10^6)
+drag_values = @time drag_MC.(Ref(epstein_sphere), mean_v_norms, σ_v, r_dom, 10^6)
 
 drag_Epstein(mean_v_norm, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v_norm
 drag_Kwok(mean_v_norm, std_v) = drag_Epstein(mean_v_norm, std_v) * √(1 + 9 * π / 128 * (mean_v_norm / std_v)^2)
 
 
 plot(
-  mean_v_norms, [drag_Epstein.(mean_v_norms, 1.0), drag_Kwok.(mean_v_norms, 1.0), drag_values] ./ (8/3 * √(2 * π) * 1.0 * epstein_sphere.r^2),
+  mean_v_norms, [drag_Epstein.(mean_v_norms, σ_v), drag_Kwok.(mean_v_norms, σ_v), drag_values] ./ (8/3 * √(2 * π) * σ_v * epstein_sphere.r^2),
   label = [&quot;Epstein (1924)&quot; &quot;Kwok (1975)&quot; &quot;GBGKnudsenGas.jl&quot;],
   color = [:black 1 1], linestyle = [:solid :solid :dash],
   ylabel = L&quot;‖\! 𝑭\ ‖ / (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)&quot;,
   xlabel = L&quot;‖\! 𝒗\ ‖ / σ_v&quot;, xticks = 0:0.5:3
 )
 
-display(plot!())
-
-savefig(&quot;Epstein_drag.svg&quot;)</code></pre><p><img src="../Epstein_drag.svg" alt="Epstein drag plot"/></p><h3 id="Computing-Epstein-coefficient"><a class="docs-heading-anchor" href="#Computing-Epstein-coefficient">Computing Epstein coefficient</a><a id="Computing-Epstein-coefficient-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-Epstein-coefficient" title="Permalink"></a></h3><pre><code class="language-julia hljs">using ForwardDiff
+savefig(&quot;Epstein_drag.svg&quot;)</code></pre><p><img src="../Epstein_drag.svg" alt="Epstein drag plot"/></p><p>As we see, <code>GBGKnudsenGas.jl</code> reproduces the exact formula of Baines et al. (1965) with excellent accuracy.</p><h3 id="Computing-Epstein-coefficient"><a class="docs-heading-anchor" href="#Computing-Epstein-coefficient">Computing Epstein coefficient</a><a id="Computing-Epstein-coefficient-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-Epstein-coefficient" title="Permalink"></a></h3><pre><code class="language-julia hljs">using ForwardDiff
 
 epstein_coefficient_MC = ForwardDiff.derivative(mean_v_norm -&gt; drag_MC(epstein_sphere, mean_v_norm, 1.0, 2.0, 10^6), mean_v_norm)
 
 epstein_coefficient = 8/3 * √(2 * π) *  epstein_sphere.r^2
 
-println(epstein_coefficient_MC / epstein_coefficient)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 8 December 2025 15:29">Monday 8 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+println(epstein_coefficient_MC / epstein_coefficient)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 8 December 2025 16:41">Monday 8 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
