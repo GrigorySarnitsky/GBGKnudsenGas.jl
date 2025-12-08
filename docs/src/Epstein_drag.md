@@ -86,7 +86,14 @@ The ensemble average is taken over particles whose initial states ($\boldsymbol 
 \| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 P(\text{hit}) \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigm| \text{hit} \bigr> \Bigr\|.
 ```
 
-To evaluate this conditional average, we first define a helper function `find_single_collision`, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments: the body (`body`), the mean velocity $\langle \boldsymbol v_0 \rangle$ (`mean_v`), the velocity standard deviation $\sigma_v$ (`std_v`), and the simulation domain radius $r_\text{dom}$ (`domain_radius`). We later call this function with `epstein_sphere` as the body and $r_\text{dom} = 2$.
+To evaluate this conditional average, we first define a helper function `find_single_collision`, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments:
+
+- the body (`body`),
+- the mean velocity $\langle \boldsymbol v_0 \rangle$ (`mean_v`),
+- the velocity standard deviation $\sigma_v$ (`std_v`),
+- the simulation domain radius $r_\text{dom}$ (`domain_radius`), see the [introduction.](index.md)
+
+We later call this function with `epstein_sphere` as the body and $r_\text{dom} = 2$.
 
 The function returns the particle’s initial state (`particle_before`), its state after the collision (`particle_after`), and the number of non-colliding samples encountered before a hit was found (`missed_particles_number`):
 
@@ -107,46 +114,34 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
 end
 ```
 
-To accurately estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the initial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
+Next, we present the function `drag_MC`, which computes $|\boldsymbol F|$. In addition to the arguments accepted by `sample_particle_state_uniform_flow`, it accepts `sample_size`, the number of particles that actually collide with the body and thus determine the accuracy of the Monte Carlo estimator. The code is multithreaded to take advantage of multi-core CPUs:
 
 ```julia
-using Base.Threads
-
-function run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-  T = eltype(mean_v)
-
-  particles_before_collision = Vector{Particle{T}}(undef, sample_size)
-  particles_after_collision  = Vector{Particle{T}}(undef, sample_size)
-  missed_particles_numbers   = Vector{Int}(undef, sample_size)
-
-  @threads for i in 1:sample_size
-    particles_before_collision[i], particles_after_collision[i], missed_particles_numbers[i] = find_single_collision(body, mean_v, std_v, domain_radius)
-  end
-
-  return particles_before_collision, particles_after_collision, missed_particles_numbers
-end
-```
-
-Finally, we write a function to calculate $\| \boldsymbol F \|$ for the specified Mach number $\| \langle \boldsymbol v_0 \rangle \|$:
-
-```julia
-using Statistics
 using LinearAlgebra
+using Base.Threads
 
 function drag_MC(body, mean_v_norm, std_v, domain_radius, sample_size)
   mean_v = SA[mean_v_norm, 0.0, 0.0]
-  
-  particles_before_collision, particles_after_collision, missed_particles_numbers = run_simulation(body, mean_v, std_v, domain_radius, sample_size)
-  
-  collision_probability = sample_size / (sum(missed_particles_numbers) + sample_size)
-  
-  F = -mean(norm(p_b.v) * (p_a.v - p_b.v) for (p_b, p_a) in zip(particles_before_collision, particles_after_collision)) * collision_probability * π * domain_radius^2
-  
-  return F[1]
+  T = eltype(mean_v)
+
+  F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
+  missed_sums = zeros(Int, nthreads())
+
+  @threads for i in 1:sample_size
+    p_b, p_a, missed = find_single_collision(body, mean_v, std_v, domain_radius)
+    tid = threadid()
+    F_sums[tid]      += norm(p_b.v) * (p_a.v - p_b.v)
+    missed_sums[tid] += missed
+  end
+
+  collision_probability = sample_size / (sample_size + sum(missed_sums))
+  F_mean = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
+
+  return F_mean[1]
 end
 ```
 
-We call it for our `epstein_sphere` and 20 different values $\| \langle \boldsymbol v_0 \rangle \|$. Then we plot the results along with the analytical predictions of Epstein (1924) and Kwok (1975):
+We now call `drag_MC` for our `epstein_sphere` and for 20 different values of $|\langle \boldsymbol v_0 \rangle|$. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):
 
 ```julia
 using Plots
@@ -154,27 +149,32 @@ using LaTeXStrings
 
 default(;fontfamily = "Computer Modern")
 
+epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
+
+const σ_v   = 1.0
+const r_dom = 2.0
+
 mean_v_norms = range(0.0, 3.0, 20)
-drag_values = drag_MC.(Ref(epstein_sphere), mean_v_norms, 1.0, 2.0, 10^6)
+drag_values = @time drag_MC.(Ref(epstein_sphere), mean_v_norms, σ_v, r_dom, 10^6)
 
 drag_Epstein(mean_v_norm, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v_norm
 drag_Kwok(mean_v_norm, std_v) = drag_Epstein(mean_v_norm, std_v) * √(1 + 9 * π / 128 * (mean_v_norm / std_v)^2)
 
 
 plot(
-  mean_v_norms, [drag_Epstein.(mean_v_norms, 1.0), drag_Kwok.(mean_v_norms, 1.0), drag_values] ./ (8/3 * √(2 * π) * 1.0 * epstein_sphere.r^2),
+  mean_v_norms, [drag_Epstein.(mean_v_norms, σ_v), drag_Kwok.(mean_v_norms, σ_v), drag_values] ./ (8/3 * √(2 * π) * σ_v * epstein_sphere.r^2),
   label = ["Epstein (1924)" "Kwok (1975)" "GBGKnudsenGas.jl"],
   color = [:black 1 1], linestyle = [:solid :solid :dash],
   ylabel = L"‖\! 𝑭\ ‖ / (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
   xlabel = L"‖\! 𝒗\ ‖ / σ_v", xticks = 0:0.5:3
 )
 
-display(plot!())
-
 savefig("Epstein_drag.svg")
 ```
 
 ![Epstein drag plot](Epstein_drag.svg)
+
+As we see, `GBGKnudsenGas.jl` reproduces the exact formula of Baines et al. (1965) with excellent accuracy.
 
 ### Computing Epstein coefficient
 
