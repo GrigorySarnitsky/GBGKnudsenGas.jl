@@ -263,8 +263,9 @@ function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   a = SA[randn(), randn(), randn()]
   b = normalize(a .- (a ⋅ e_v) * e_v)
   x = -e_v * domain_radius .+ b * √rand() * domain_radius
-  T = eltype(v)
-  return Particle(v, x, zero(T))
+  #T = eltype(v)
+  #return Particle(v, x, zero(T))
+  return Particle(v, x, Float64)
 end
 
 end # module GBGKnudsenGas
