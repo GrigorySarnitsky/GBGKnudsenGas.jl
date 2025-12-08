@@ -24,16 +24,11 @@ using LinearAlgebra
 
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 """
-struct Particle
-  v::SVector{3, Float64}
-  x::SVector{3, Float64}
-  t::Float64
+struct Particle{T<:Real}
+  v::SVector{3, T}
+  x::SVector{3, T}
+  t::T
 end
-# struct Particle{T<:Real}
-#   v::SVector{3, T}
-#   x::SVector{3, T}
-#   t::T
-# end
 
 
 """
@@ -263,9 +258,8 @@ function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   a = SA[randn(), randn(), randn()]
   b = normalize(a .- (a ⋅ e_v) * e_v)
   x = -e_v * domain_radius .+ b * √rand() * domain_radius
-  #T = eltype(v)
-  #return Particle(v, x, zero(T))
-  return Particle(v, x, 0.0)
+  T = eltype(v)
+  return Particle(v, x, zero(T))
 end
 
 end # module GBGKnudsenGas
