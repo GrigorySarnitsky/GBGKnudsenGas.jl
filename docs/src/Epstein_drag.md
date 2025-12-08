@@ -54,13 +54,13 @@ Kwok's formula is accurate within 1% of the exact expression. The exact formula 
 * Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
 
-## Monte Carlo calculation of the Epstein drag with `GBGKnudsenGas.jl`
+## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-Full code of this computation is available in `examples/epstein_drag.jl`. For simplicity, we will be calculating the norm $\| \boldsymbol F \|$ of $\boldsymbol F$.
+The full code of this computation is available in `examples/epstein_drag.jl`. For a more convinient analysis, we calculate the norm $\| \boldsymbol F \|$ of the force vector $\boldsymbol F$.
 
 ### Computing $\| \boldsymbol F \|$
 
-We start by defining our sphere, which we call `epstein_sphere`. We set its radius to $1.0$ and center it in the origin $(0, 0, 0)$ of the Cartesian coordinate system:
+We start by defining our sphere, `epstein_sphere`, with radius $1.0$ and center at the origin $(0, 0, 0)$ of the Cartesian coordinate system:
 
 ```julia
 using StaticArrays
@@ -69,24 +69,31 @@ using GBGKnudsenGas
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-Next, recall from the [introduction,](index.md) that we can calculate $\| \boldsymbol F \|$ as
+The calculation of $\| \boldsymbol F \|$ is based on the statistics of the velocity increments of the gas particles. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The velocity increment is
 
 ```math
-\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigr> \Bigr\|,
+\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0
 ```
-where the ensemble average is over the particles whose initial state is sampled with the `sample_particle_state_uniform_flow` function. We rewrite it as
+Recall from the [introduction,](index.md) that
 
 ```math
-\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigr> \Bigr\|,
+\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \| \boldsymbol v_0 \| \bigr> \Bigr\|.
 ```
 
-However, we are interested only in particles that will collide with the sphere. Given that `domain_radius` is much larger than the radius of `epstein_sphere`, most of the generated particles will miss the `epstein_sphere`. Hence we write a simple function `find_single_collision` that keeps drawing particles from the initial distribution until it finds one that collides with the `body`. Later we call `find_single_collision` with `epstein_sphere` for the `body`. The function returns the initial state of the particle `particle_before`, as well as its state after the collision `particle_after`:
+The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using `sample_particle_state_uniform_flow`. Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
 
+```math
+\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 P(\text{hit}) \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigm| \text{hit} \bigr> \Bigr\|.
+```
+
+To evaluate this conditional average, we first define a helper function `find_single_collision`, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments: the body (`body`), the mean velocity $\langle \boldsymbol v_0 \rangle$ (`mean_v`), the velocity standard deviation $\sigma_v$ (`std_v`), and the simulation domain radius $r_\text{dom}$ (`domain_radius`). We later call this function with `epstein_sphere` as the body and $r_\text{dom} = 2$.
+
+The function returns the particle’s initial state (`particle_before`), its state after the collision (`particle_after`), and the number of non-colliding samples encountered before a hit was found (`missed_particles_number`):
 
 ```julia
 function find_single_collision(body, mean_v, std_v, domain_radius)
   missed_particles_number = 0
-
+  
   while true
     particle_before = sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
     particle_after  = collide_with_body(particle_before, body)
@@ -98,7 +105,6 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
     missed_particles_number += 1
   end 
 end
-
 ```
 
 To accurately estimate ensemble averages, we need a large sample of particles that collided with the body. The function `run_simulation` below finds `sample_size` particles (later we set `sample_size` to `10^6`) that collided with the `body` and returns two arrays, one with the initial state of the particles before the collision (`particles_before_collision`) and one with the particle states after the collision (`particles_after_collision`). The code is multithreaded to take advantage of a multi-core CPU:
@@ -143,6 +149,11 @@ end
 We call it for our `epstein_sphere` and 20 different values $\| \langle \boldsymbol v_0 \rangle \|$. Then we plot the results along with the analytical predictions of Epstein (1924) and Kwok (1975):
 
 ```julia
+using Plots
+using LaTeXStrings
+
+default(;fontfamily = "Computer Modern")
+
 mean_v_norms = range(0.0, 3.0, 20)
 drag_values = drag_MC.(Ref(epstein_sphere), mean_v_norms, 1.0, 2.0, 10^6)
 
