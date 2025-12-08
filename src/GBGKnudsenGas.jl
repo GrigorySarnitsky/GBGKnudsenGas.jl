@@ -24,11 +24,16 @@ using LinearAlgebra
 
 Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
 """
-struct Particle{T<:Real}
-  v::SVector{3, T}
-  x::SVector{3, T}
-  t::T
+struct Particle
+  v::SVector{3, Float64}
+  x::SVector{3, Float64}
+  t::Float64
 end
+# struct Particle{T<:Real}
+#   v::SVector{3, T}
+#   x::SVector{3, T}
+#   t::T
+# end
 
 
 """
