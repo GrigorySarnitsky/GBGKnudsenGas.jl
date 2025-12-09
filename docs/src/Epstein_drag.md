@@ -40,25 +40,35 @@ Let $\boldsymbol F$ be the force that the flowing gas exerts on the sphere and $
 see the papers
 
 * Epstein, Paul S. (1924). "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23(6), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
-* Li, Zhigang, and Wang, Hai (2003). "Drag force, diffusion coefficient, and electric mobility of small particles. I. Theory applicable to the free-molecule regime." _Physical Review E,_ 68(6), 061206, [10.1103/PhysRevE.68.061206](https://doi.org/10.1103/PhysRevE.68.061206)
+* Li, Zhigang, and Wang, Hai (2003). "Drag force, diffusion coefficient, and electric mobility of small particles. I. Theory applicable to the free-molecule regime." _Physical Review E,_ 68(6), 061206, [10.1103/PhysRevE.68.061206](https://doi.org/10.1103/PhysRevE.68.061206).
 
 For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
+
 ```math
 \boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},
 ```
+
 see the papers
 * Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
 * Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
-Kwok's formula is accurate within 1% of the exact expression. The exact formula for $\boldsymbol F$ was given by Baines et al. (1965), but we won't use it, see
+Kwok's formula is accurate within 1% of the exact expression. The exact formula for $\boldsymbol F$ was derived by Baines et al. (1965):
+
+```math
+\boldsymbol F_\text{Baines et al. (1965)}
+= \frac{3}{8} \psi \biggl[\biggl(\frac{1}{\psi} + \frac{1}{2 \psi^3} \biggr) + \biggl(1 + \frac{1}{\psi^2} - \frac{1}{4 \psi^4} \biggr) \sqrt \pi \biggr] \boldsymbol F_\text{Epstein (1924)},
+\qquad \psi = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sqrt 2 \sigma_v}.
+```
+
+see the original paper
 * Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-The full code of this computation is available in `examples/epstein_drag.jl`. For a more convinient analysis, we calculate the norm $\| \boldsymbol F \|$ of the force vector $\boldsymbol F$.
+The full code of this computation is available in `examples/epstein_drag.jl`.
 
-### Computing $\| \boldsymbol F \|$
+### Computing $\boldsymbol F$
 
 We start by defining our sphere, `epstein_sphere`, with radius $1.0$ and center at the origin $(0, 0, 0)$ of the Cartesian coordinate system:
 
@@ -69,7 +79,7 @@ using GBGKnudsenGas
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 ```
 
-The calculation of $\| \boldsymbol F \|$ is based on the statistics of the velocity increments of the gas particles. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The velocity increment is
+The calculation of $\boldsymbol F$ is based on the statistics of the velocity increments of the gas particles. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The velocity increment is
 
 ```math
 \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0
@@ -77,13 +87,13 @@ The calculation of $\| \boldsymbol F \|$ is based on the statistics of the veloc
 Recall from the [introduction,](index.md) that
 
 ```math
-\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \| \boldsymbol v_0 \| \bigr> \Bigr\|.
+\boldsymbol F = \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>.
 ```
 
 The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using `sample_particle_state_uniform_flow`. Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
 
 ```math
-\| \boldsymbol F \| = \rho  \pi r_\text{dom}^2 P(\text{hit}) \Bigl\| \bigl< \Delta \boldsymbol v(\boldsymbol x_0) \| \boldsymbol v_0 \| \bigm| \text{hit} \bigr> \Bigr\|.
+\boldsymbol F = \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol x_0) \bigm| \text{hit} \bigr> .
 ```
 
 To evaluate this conditional average, we first define a helper function `find_single_collision`, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments:
@@ -114,16 +124,14 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
 end
 ```
 
-Next, we present the function `drag_MC`, which computes $|\boldsymbol F|$. In addition to the arguments accepted by `sample_particle_state_uniform_flow`, it accepts `sample_size`, the number of particles that actually collide with the body and thus determine the accuracy of the Monte Carlo estimator. The code is multithreaded to take advantage of multi-core CPUs:
+Next, we present the function `force_MC`, which computes $\boldsymbol F$. In addition to the arguments accepted by `sample_particle_state_uniform_flow`, it accepts `sample_size`, the number of particles that actually collide with the body and thus determine the accuracy of the Monte Carlo estimator. The code is multithreaded to take advantage of multi-core CPUs:
 
 ```julia
 using LinearAlgebra
 using Base.Threads
 
-function drag_MC(body, mean_v_norm, std_v, domain_radius, sample_size)
-  mean_v = SA[mean_v_norm, 0.0, 0.0]
+function force_MC(body, mean_v, std_v, domain_radius, sample_size)
   T = eltype(mean_v)
-
   F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
   missed_sums = zeros(Int, nthreads())
 
@@ -135,41 +143,52 @@ function drag_MC(body, mean_v_norm, std_v, domain_radius, sample_size)
   end
 
   collision_probability = sample_size / (sample_size + sum(missed_sums))
-  F_mean = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
+  force = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
 
-  return F_mean[1]
+  return force
 end
 ```
 
-We now call `drag_MC` for our `epstein_sphere` and for 20 different values of $|\langle \boldsymbol v_0 \rangle|$. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):
+We now call `force_MC` for our `epstein_sphere` and for 20 different values of $|\langle \boldsymbol v_0 \rangle|$. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):
 
 ```julia
-using Plots
-using LaTeXStrings
-
-default(;fontfamily = "Computer Modern")
-
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 
 const σ_v   = 1.0
 const r_dom = 2.0
 
-mean_v_norms = range(0.0, 3.0, 20)
-drag_values = @time drag_MC.(Ref(epstein_sphere), mean_v_norms, σ_v, r_dom, 10^6)
+mean_v_values = [SA[mean_v, 0.0, 0.0] for mean_v in range(0.0, 3.0, 20)]
+force_MC_values = @time force_MC.(Ref(epstein_sphere), mean_v_values, σ_v, r_dom, 10^6)
 
-drag_Epstein(mean_v_norm, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v_norm
-drag_Kwok(mean_v_norm, std_v) = drag_Epstein(mean_v_norm, std_v) * √(1 + 9 * π / 128 * (mean_v_norm / std_v)^2)
+force_Epstein(mean_v, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v
 
+function force_Baines(mean_v, std_v)
+  ψ = norm(mean_v) / (√2 * std_v)
+  return 3/8 * ψ * ((1/ψ + 1/(2ψ^3)) * exp(-ψ^2) + (1 + 1/ψ^2 - 1/(4ψ^4)) * √π * erf(ψ)) * force_Epstein(mean_v, std_v)
+end
+
+force_Kwok(mean_v, std_v) = force_Epstein(mean_v, std_v) * √(1 + 9 * π / 128 * (norm(mean_v) / std_v)^2)
+
+
+normalize_force(F) = norm(F) / (8/3 * √(2 * π) * σ_v * epstein_sphere.r^2)
 
 plot(
-  mean_v_norms, [drag_Epstein.(mean_v_norms, σ_v), drag_Kwok.(mean_v_norms, σ_v), drag_values] ./ (8/3 * √(2 * π) * σ_v * epstein_sphere.r^2),
-  label = ["Epstein (1924)" "Kwok (1975)" "GBGKnudsenGas.jl"],
-  color = [:black 1 1], linestyle = [:solid :solid :dash],
+  norm.(mean_v_values) / σ_v,
+  [
+    normalize_force.(force_Epstein.(mean_v_values, σ_v)),
+    normalize_force.(force_Baines.(mean_v_values, σ_v)),
+    normalize_force.(force_Kwok.(mean_v_values, σ_v)),
+    normalize_force.(force_MC_values)
+  ],
+  label = ["Epstein (1924)" "Baines et al. (1965)" "Kwok (1975)" "GBGKnudsenGas.jl"], legend = :topleft,
+  color = [:black 1 2 :black], linestyle = [:solid :solid :dash :dashdot],
   ylabel = L"‖\! 𝑭\ ‖ / (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
-  xlabel = L"‖\! 𝒗\ ‖ / σ_v", xticks = 0:0.5:3
+  xlabel = L"‖ \langle 𝒗_0 \rangle ‖ / σ_v", xticks = 0:0.5:3
 )
 
-savefig("Epstein_drag.svg")
+display(plot!())
+
+savefig("Epstein_force.svg")
 ```
 
 ![Epstein drag plot](Epstein_drag.svg)
