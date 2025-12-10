@@ -249,8 +249,7 @@ end
 Sample an initial particle state for a gas in thermal equilibrium flowing past a body:
 
 * The velocity `Particle.v` is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`.
-* The initial position `Particle.x` is drawn uniformly on the disk of radius `domain_radius`,
-which is oriented perpendicular to `Particle.v` and is located at a distance `domain_radius` from the domain center.
+* The initial position `Particle.x` is drawn uniformly on the disk of radius `domain_radius`; the disk is oriented perpendicular to `Particle.v` and is located at a distance `domain_radius` from the domain center.
 * The time `Particle.t` is set to `0.0`.
 """
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
