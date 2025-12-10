@@ -37,7 +37,13 @@ function force_MC(body, mean_v, std_v, domain_radius, sample_size)
   force = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
 
   return force
-end</code></pre><p>We now call <code>force_MC</code> for our <code>epstein_sphere</code> and for 20 different values of <span>$|\langle \boldsymbol v_0 \rangle|$</span>. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):</p><pre><code class="language-julia hljs">epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
+end</code></pre><p>We now call <code>force_MC</code> for our <code>epstein_sphere</code> and for 20 different values of <span>$\| \langle \boldsymbol v_0 \rangle \|$</span>. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):</p><pre><code class="language-julia hljs">using SpecialFunctions
+using Plots
+using LaTeXStrings
+
+default(;fontfamily = &quot;Computer Modern&quot;)
+
+epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 
 const σ_v   = 1.0
 const r_dom = 2.0
@@ -73,10 +79,16 @@ plot(
 
 display(plot!())
 
-savefig(&quot;Epstein_force.svg&quot;)</code></pre><p><img src="../Epstein_drag.svg" alt="Epstein drag plot"/></p><p>As we see, <code>GBGKnudsenGas.jl</code> reproduces the exact formula of Baines et al. (1965) with excellent accuracy.</p><h3 id="Computing-Epstein-coefficient"><a class="docs-heading-anchor" href="#Computing-Epstein-coefficient">Computing Epstein coefficient</a><a id="Computing-Epstein-coefficient-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-Epstein-coefficient" title="Permalink"></a></h3><pre><code class="language-julia hljs">using ForwardDiff
+savefig(&quot;Epstein_force.svg&quot;)</code></pre><p><img src="../Epstein_drag.svg" alt="Epstein drag plot"/></p><p>As we see, <code>GBGKnudsenGas.jl</code> reproduces the exact formula of Baines et al. (1965) with excellent accuracy.</p><h3 id="Computing-force-linear-response-tensor"><a class="docs-heading-anchor" href="#Computing-force-linear-response-tensor">Computing force linear response tensor</a><a id="Computing-force-linear-response-tensor-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-force-linear-response-tensor" title="Permalink"></a></h3><p>In the low Mach number regime, <span>$\text{Ma} \ll 1$</span>, the force <span>$\boldsymbol F$</span> is linear in <span>$\langle \boldsymbol v_0 \rangle$</span> and is fully described by the linear response tensor <span>$\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$</span>:</p><p class="math-container">\[\boldsymbol F
+= \frac{\mathrm d \boldsymbol F}{\mathrm d \langle \boldsymbol v_0 \rangle} \bigg|_{\langle \boldsymbol v_0 \rangle = 0} \cdot \langle \boldsymbol v_0 \rangle + \ldots.\]</p><p>To compute <span>$\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$</span> we use Julia&#39;s capabilities in differential programming:</p><pre><code class="language-julia hljs">using ForwardDiff
 
-epstein_coefficient_MC = ForwardDiff.derivative(mean_v_norm -&gt; drag_MC(epstein_sphere, mean_v_norm, 1.0, 2.0, 10^6), mean_v_norm)
+force_linear_response_MC = @time ForwardDiff.jacobian(mean_v -&gt; force_MC(epstein_sphere, mean_v, σ_v, r_dom, 10^7), SA[0.0, 0.0, 0.0])
 
-epstein_coefficient = 8/3 * √(2 * π) *  epstein_sphere.r^2
+epstein_coefficient = 8/3 * √(2 * π) * σ_v * epstein_sphere.r^2
 
-println(epstein_coefficient_MC / epstein_coefficient)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 9 December 2025 23:44">Tuesday 9 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+println(&quot;\n(dF / dv) / epstein_coefficient = &quot;)
+display(round.(force_linear_response_MC / epstein_coefficient, digits = 5))</code></pre><p>which produces</p><pre><code class="language-console hljs">(dF / dv) / epstein_coefficient = 
+3×3 SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
+  1.00032   5.0e-5   -0.00024
+ -1.0e-5    0.99977  -0.00022
+ -0.00016  -0.00046   1.00014</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 10 December 2025 00:19">Wednesday 10 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
