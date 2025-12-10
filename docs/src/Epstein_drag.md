@@ -210,7 +210,16 @@ In the low Mach number regime, $\text{Ma} \ll 1$, the force $\boldsymbol F$ is l
 = \frac{\mathrm d \boldsymbol F}{\mathrm d \langle \boldsymbol v_0 \rangle} \bigg|_{\langle \boldsymbol v_0 \rangle = 0} \cdot \langle \boldsymbol v_0 \rangle + \ldots.
 ```
 
-To compute $\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$ we use Julia's capabilities in differential programming:
+For our sphere
+
+```math
+\frac{\mathrm d \boldsymbol F}{\mathrm d \langle \boldsymbol v_0 \rangle} \bigg|_{\langle \boldsymbol v_0 \rangle = 0}
+= - \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \, \mathbf{I},
+```
+
+where $\mathbf{I}$ is the identity tensor.
+
+To compute $\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$ at $\langle \boldsymbol v_0 \rangle = 0$ with `GBGKnudsenGas.jl` we use Julia's capabilities in differential programming:
 
 ```julia
 using ForwardDiff
