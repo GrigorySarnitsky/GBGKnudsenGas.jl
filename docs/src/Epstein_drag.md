@@ -34,7 +34,7 @@ Let $\boldsymbol F$ be the force that the flowing gas exerts on the sphere and $
 
 ```math
 \boldsymbol F_\text{Epstein (1924)}
-= - \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,
+= \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,
 ```
 
 see the papers
@@ -87,13 +87,13 @@ The calculation of $\boldsymbol F$ is based on the statistics of the velocity in
 Recall from the [introduction,](index.md) that
 
 ```math
-\boldsymbol F = \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>.
+\boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>.
 ```
 
 The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using `sample_particle_state_uniform_flow`. Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
 
 ```math
-\boldsymbol F = \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol x_0) \bigm| \text{hit} \bigr> .
+\boldsymbol F = - \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol x_0) \bigm| \text{hit} \bigr> .
 ```
 
 To evaluate this conditional average, we first define a helper function `find_single_collision`, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments:
@@ -214,7 +214,7 @@ For our sphere
 
 ```math
 \frac{\mathrm d \boldsymbol F}{\mathrm d \langle \boldsymbol v_0 \rangle} \bigg|_{\langle \boldsymbol v_0 \rangle = 0}
-= - \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \, \mathbf{I},
+= \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \, \mathbf{I},
 ```
 
 where $\mathbf{I}$ is the identity tensor.
@@ -237,7 +237,7 @@ which produces
 ```console
 (dF / dv) / epstein_coefficient = 
 3×3 SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
-  1.00032   5.0e-5   -0.00024
- -1.0e-5    0.99977  -0.00022
- -0.00016  -0.00046   1.00014
+  1.00022   0.00063  -8.0e-5
+  0.00014   1.00011  -2.0e-5
+ -7.0e-5   -0.00026   1.00039
 ```
