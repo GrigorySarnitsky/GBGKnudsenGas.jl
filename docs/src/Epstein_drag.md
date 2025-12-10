@@ -149,9 +149,15 @@ function force_MC(body, mean_v, std_v, domain_radius, sample_size)
 end
 ```
 
-We now call `force_MC` for our `epstein_sphere` and for 20 different values of $|\langle \boldsymbol v_0 \rangle|$. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):
+We now call `force_MC` for our `epstein_sphere` and for 20 different values of $\| \langle \boldsymbol v_0 \rangle \|$. We then plot the results together with the analytical predictions of Epstein (1924), Baines et al. (1965), and Kwok (1975):
 
 ```julia
+using SpecialFunctions
+using Plots
+using LaTeXStrings
+
+default(;fontfamily = "Computer Modern")
+
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 
 const σ_v   = 1.0
@@ -195,14 +201,34 @@ savefig("Epstein_force.svg")
 
 As we see, `GBGKnudsenGas.jl` reproduces the exact formula of Baines et al. (1965) with excellent accuracy.
 
-### Computing Epstein coefficient
+### Computing force linear response tensor
+
+In the low Mach number regime, $\text{Ma} \ll 1$, the force $\boldsymbol F$ is linear in $\langle \boldsymbol v_0 \rangle$ and is fully described by the linear response tensor $\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$:
+
+```math
+\boldsymbol F
+= \frac{\mathrm d \boldsymbol F}{\mathrm d \langle \boldsymbol v_0 \rangle} \bigg|_{\langle \boldsymbol v_0 \rangle = 0} \cdot \langle \boldsymbol v_0 \rangle + \ldots.
+```
+
+To compute $\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$ we use Julia's capabilities in differential programming:
 
 ```julia
 using ForwardDiff
 
-epstein_coefficient_MC = ForwardDiff.derivative(mean_v_norm -> drag_MC(epstein_sphere, mean_v_norm, 1.0, 2.0, 10^6), mean_v_norm)
+force_linear_response_MC = @time ForwardDiff.jacobian(mean_v -> force_MC(epstein_sphere, mean_v, σ_v, r_dom, 10^7), SA[0.0, 0.0, 0.0])
 
-epstein_coefficient = 8/3 * √(2 * π) *  epstein_sphere.r^2
+epstein_coefficient = 8/3 * √(2 * π) * σ_v * epstein_sphere.r^2
 
-println(epstein_coefficient_MC / epstein_coefficient)
+println("\n(dF / dv) / epstein_coefficient = ")
+display(round.(force_linear_response_MC / epstein_coefficient, digits = 5))
+```
+
+which produces
+
+```console
+(dF / dv) / epstein_coefficient = 
+3×3 SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
+  1.00032   5.0e-5   -0.00024
+ -1.0e-5    0.99977  -0.00022
+ -0.00016  -0.00046   1.00014
 ```
