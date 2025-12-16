@@ -260,7 +260,7 @@ Sample an initial particle state for a gas in thermal equilibrium flowing past a
 * The time `Particle.t` is set to `0.0`.
 """
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
-  T = promote_type(eltype(mean_v), typeof(std_v), typeof(domain_radius))
+  T = eltype(mean_v)
   v = std_v * SA[randn(T), randn(T), randn(T)] .+ mean_v
   e_v = normalize(v)
   a = SA[randn(T), randn(T), randn(T)]
