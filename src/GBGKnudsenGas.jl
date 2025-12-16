@@ -193,10 +193,10 @@ A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod 
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
-struct IsotropicHelicoid{T_L<:Real, T_r<:Real} <: Body
+struct IsotropicHelicoid{T_L<:Real, T_r<:Real, T_el<:CompoundBody} <: Body
   cube_side_length::T_L
   r::T_r
-  elements::CompoundBody
+  elements::T_el
 end
 
 
@@ -301,7 +301,6 @@ function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius
     missed_particles_number += 1
   end 
 end
-
 
 
 """
