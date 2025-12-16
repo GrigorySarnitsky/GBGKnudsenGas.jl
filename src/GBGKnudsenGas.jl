@@ -11,12 +11,13 @@ All particle–body collisions are assumed to be specular. The package uses a Ca
 module GBGKnudsenGas
 
 
-export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, CompoundBodyDynamic,
- collide_with_body, sample_particle_state_uniform_flow
+export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, collide_with_body,
+ sample_particle_state_uniform_flow, find_colliding_particle_uniform_flow, force_and_torque_uniform_flow
 
 
 using StaticArrays
 using LinearAlgebra
+using Base.Threads
 
 
 """
@@ -55,9 +56,9 @@ collide_with_body(::Particle, ::Body)::Union{Nothing, Particle} = error("No coll
 
 Sphere of radius `r` centered at point `x`.
 """
-struct Sphere <: Body
-  x::SVector{3, Float64}
-  r::Float64
+struct Sphere{T<:Real} <: Body
+  x::SVector{3,T}
+  r::T
 end
 
 
@@ -84,13 +85,14 @@ end
 
 Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radius `r`.
 
-Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicopiod`.
+Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicoid`.
 """
-struct CylinderSideWall <: Body
-  x_1::SVector{3, Float64}
-  x_2::SVector{3, Float64}
-  r  ::Float64
+struct CylinderSideWall{T<:Real} <: Body
+  x_1::SVector{3,T}
+  x_2::SVector{3,T}
+  r  ::T
 end
+
 
 function collide_with_body(particle::Particle, cylinder::CylinderSideWall)::Union{Nothing, Particle}
   Δx = particle.x - cylinder.x_1
@@ -161,26 +163,26 @@ function collide_with_body(particle::Particle, compound_body::CompoundBody)
 end
 
 
-"""
-    CompoundBodyDynamic <: Body
-    CompoundBodyDynamic(bodies::Array{Body, 1})
+# """
+#     CompoundBodyDynamic <: Body
+#     CompoundBodyDynamic(bodies::Array{Body, 1})
 
-A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
+# A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
 
-This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
-"""
-struct CompoundBodyDynamic <: Body
-  bodies::Array{Body, 1}
-end
+# This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
+# """
+# struct CompoundBodyDynamic <: Body
+#   bodies::Array{Body, 1}
+# end
 
-function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)::Union{Nothing, Particle}
-  nearest_collision_particle::Union{Nothing, Particle} = nothing
-  for body in compound_body.bodies
-    collided_particle = collide_with_body(particle, body)
-    nearest_collision_particle = earlier(nearest_collision_particle, collided_particle)
-  end
-  return nearest_collision_particle
-end
+# function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)::Union{Nothing, Particle}
+#   nearest_collision_particle::Union{Nothing, Particle} = nothing
+#   for body in compound_body.bodies
+#     collided_particle = collide_with_body(particle, body)
+#     nearest_collision_particle = earlier(nearest_collision_particle, collided_particle)
+#   end
+#   return nearest_collision_particle
+# end
 
 
 """
@@ -191,57 +193,61 @@ A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod 
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
-struct IsotropicHelicoid <: Body
-  cube_side_length::Float64
-  r::Float64
+struct IsotropicHelicoid{T<:Real} <: Body
+  cube_side_length::T
+  r::T
   elements::CompoundBody
 end
 
 
-IsotropicHelicoid(cube_side_length, r) = IsotropicHelicoid(cube_side_length, r,
+function IsotropicHelicoid(cube_side_length, r)
+  L = cube_side_length / 6
+  return IsotropicHelicoid(cube_side_length, r,
   CompoundBody(
     CompoundBody(
-      CylinderSideWall(SA[ 1,  2,  3] / 6 * cube_side_length, SA[ 2,  1, -3 ]/ 6 * cube_side_length, r),
-      Sphere(SA[ 1,  2,  3] / 6 * cube_side_length, r), Sphere(SA[ 2,  1, -3] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 1,  2,  3] * L,            SA[ 2,  1, -3] * L, r),
+                Sphere(SA[ 1,  2,  3] * L, r), Sphere(SA[ 2,  1, -3] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[-2,  1,  3] / 6 * cube_side_length, SA[-1,  2, -3] / 6 * cube_side_length, r),
-      Sphere(SA[-2,  1,  3] / 6 * cube_side_length, r), Sphere(SA[-1,  2, -3] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[-2,  1,  3] * L, SA[-1,  2, -3] * L, r),
+                Sphere(SA[-2,  1,  3] * L, r), Sphere(SA[-1,  2, -3] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[-1, -2,  3] / 6 * cube_side_length, SA[-2, -1, -3] / 6 * cube_side_length, r),
-      Sphere(SA[-1, -2,  3] / 6 * cube_side_length, r), Sphere(SA[-2, -1, -3] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[-1, -2,  3] * L,            SA[-2, -1, -3] * L, r),
+                Sphere(SA[-1, -2,  3] * L, r), Sphere(SA[-2, -1, -3] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 2, -1,  3] / 6 * cube_side_length, SA[ 1, -2, -3] / 6 * cube_side_length, r),
-      Sphere(SA[ 2, -1,  3] / 6 * cube_side_length, r), Sphere(SA[ 1, -2, -3] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 2, -1,  3] * L,            SA[ 1, -2, -3] * L, r),
+                Sphere(SA[ 2, -1,  3] * L, r), Sphere(SA[ 1, -2, -3] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 2,  3,  1] / 6 * cube_side_length, SA[ 1, -3,  2] / 6 * cube_side_length, r),
-      Sphere(SA[ 2,  3,  1] / 6 * cube_side_length, r), Sphere(SA[ 1, -3,  2] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 2,  3,  1] * L,            SA[ 1, -3,  2] * L, r),
+                Sphere(SA[ 2,  3,  1] * L, r), Sphere(SA[ 1, -3,  2] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[-1,  3,  2] / 6 * cube_side_length, SA[-2, -3,  1] / 6 * cube_side_length, r),
-      Sphere(SA[-1,  3,  2] / 6 * cube_side_length, r), Sphere(SA[-2, -3,  1] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[-1,  3,  2] * L,            SA[-2, -3,  1] * L, r),
+                Sphere(SA[-1,  3,  2] * L, r), Sphere(SA[-2, -3,  1] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 1,  3, -2] / 6 * cube_side_length, SA[ 2, -3, -1] / 6 * cube_side_length, r),
-      Sphere(SA[ 1,  3, -2] / 6 * cube_side_length, r), Sphere(SA[ 2, -3, -1] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 1,  3, -2] * L,            SA[ 2, -3, -1] * L, r),
+                Sphere(SA[ 1,  3, -2] * L, r), Sphere(SA[ 2, -3, -1] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[-2,  3, -1] / 6 * cube_side_length, SA[-1, -3, -2] / 6 * cube_side_length, r),
-      Sphere(SA[-2,  3, -1] / 6 * cube_side_length, r), Sphere(SA[-1, -3, -2] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[-2,  3, -1] * L,            SA[-1, -3, -2] * L, r),
+                Sphere(SA[-2,  3, -1] * L, r), Sphere(SA[-1, -3, -2] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 3,  1,  2] / 6 * cube_side_length, SA[-3,  2,  1] / 6 * cube_side_length, r),
-      Sphere(SA[ 3,  1,  2] / 6 * cube_side_length, r), Sphere(SA[-3,  2,  1] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 3,  1,  2] * L,            SA[-3,  2,  1] * L, r),
+                Sphere(SA[ 3,  1,  2] * L, r), Sphere(SA[-3,  2,  1] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 3, -2,  1] / 6 * cube_side_length, SA[-3, -1,  2] / 6 * cube_side_length, r),
-      Sphere(SA[ 3, -2,  1] / 6 * cube_side_length, r), Sphere(SA[-3, -1,  2] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 3, -2,  1] * L,            SA[-3, -1,  2] * L, r),
+                Sphere(SA[ 3, -2,  1] * L, r), Sphere(SA[-3, -1,  2] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 3, -1, -2] / 6 * cube_side_length, SA[-3, -2, -1] / 6 * cube_side_length, r),
-      Sphere(SA[ 3, -1, -2] / 6 * cube_side_length, r), Sphere(SA[-3, -2, -1] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 3, -1, -2] * L,            SA[-3, -2, -1] * L, r),
+                Sphere(SA[ 3, -1, -2] * L, r), Sphere(SA[-3, -2, -1] * L, r)),
     CompoundBody(
-      CylinderSideWall(SA[ 3,  2, -1] / 6 * cube_side_length, SA[-3,  1, -2] / 6 * cube_side_length, r),
-      Sphere(SA[ 3,  2, -1] / 6 * cube_side_length, r), Sphere(SA[-3,  1, -2] / 6 * cube_side_length, r)),
+      CylinderSideWall(SA[ 3,  2, -1] * L,            SA[-3,  1, -2] * L, r),
+                Sphere(SA[ 3,  2, -1] * L, r), Sphere(SA[-3,  1, -2] * L, r)),
   ))
+end
 
 
 function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)::Union{Nothing, Particle}
   return collide_with_body(particle, helicoid.elements)
 end
+
 
 """
     sample_particle_state_uniform_flow(mean_v, std_v, domain_radius) -> Particle
@@ -261,5 +267,93 @@ function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   T = eltype(v)
   return Particle(v, x, zero(T))
 end
+
+
+"""
+    find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+
+Repeatedly draw particles from [`sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)`](@ref) until one collides with `body`.
+
+Arguments:
+- `body`: body past which the gas flows.
+- `mean_v`: mean velocity of gas particles.
+- `std_v`: isotropic velocity standard deviation of gas particles.
+- `domain_radius`: the radius of a spherical simulation domain centered at ``(0, 0, 0)``, which the body must fully fit into.
+
+Returns tuple `(particle_before, particle_after, missed_particles_number)` where:
+
+- `particle_before::Particle`: particle state before the collision.
+- `particle_after::Particle`: particle state after the collision.
+- `missed_particles_number::Int64` number of non-colliding particles encountered before a hit was found.
+"""
+function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+  missed_particles_number = 0
+  
+  while true
+    particle_before = sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
+    particle_after  = collide_with_body(particle_before, body)
+    
+    if !isnothing(particle_after)
+      return particle_before, particle_after, missed_particles_number
+    end
+    
+    missed_particles_number += 1
+  end 
+end
+
+
+
+"""
+    force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
+
+Calculate force and torque a flow of a Knudsen gas at thermal equilibrium excerts on a body. Both the force and the torque are normalized by the gas density (``\\boldsymbol F\rho``, ``\\boldsymbol M\rho``).
+
+Arguments:
+- `body`: body past which the gas flows.
+- `torque_point`: point with respect to which the flow is computed.
+- `mean_v`: mean velocity of gas particles.
+- `std_v`: isotropic velocity standard deviation of gas particles.
+- `max_collisions`: maximum number of collisions of the particle with the body. The first one is always computed, but
+- `domain_radius`: the radius of a spherical simulation domain centered at ``(0, 0, 0)``, which the body must fully fit into.
+- `sample_size`: number of colliding particles used for the Monte Carlo estimation of the force and torque.
+
+The code is multithreaded with `Base.Threads` to take advantage of multi-core CPUs.
+"""
+function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
+  T = eltype(mean_v)
+  F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
+  M_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
+  missed_sums = zeros(Int, nthreads())
+
+  @threads for i in 1:sample_size
+    p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+    tid = threadid()
+
+    Δv = p_a.v - p_b.v
+    w  = norm(p_b.v)
+    F_sums[tid] += w * Δv
+    M_sums[tid] += w * (p_a.x - torque_point) × Δv
+    missed_sums[tid] += missed
+    
+    for _ in 2:max_collisions
+      p_b = p_a
+      p_a = collide_with_body(p_b, body)
+      
+      if isnothing(p_a) break end
+      
+      Δv = p_a.v - p_b.v
+      F_sums[tid] += w * Δv
+      M_sums[tid] += w * (p_a.x - torque_point) × Δv
+    end
+  end
+
+  collision_probability = sample_size / (sample_size + sum(missed_sums))
+  
+  F = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
+  M = - sum(M_sums) / sample_size * collision_probability * π * domain_radius^2
+
+  return (F = F, M = M, P_hit = collision_probability)
+end
+
 
 end # module GBGKnudsenGas

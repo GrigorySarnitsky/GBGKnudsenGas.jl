@@ -16,7 +16,6 @@ Body
 Sphere
 CylinderSideWall
 CompoundBody
-CompoundBodyDynamic
 IsotropicHelicoid
 ```
 
@@ -25,4 +24,6 @@ IsotropicHelicoid
 ```@docs
 collide_with_body
 sample_particle_state_uniform_flow
+find_colliding_particle_uniform_flow
+force_and_torque_uniform_flow
 ```
