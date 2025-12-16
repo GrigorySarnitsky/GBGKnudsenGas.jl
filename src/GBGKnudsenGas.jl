@@ -47,7 +47,7 @@ Compute the next collision of `particle` with `body`, assuming straight-line mot
 
 Return a new `Particle` located at the collision point, with updated velocity (after the collision) and time, or `nothing` if there is no collision.
 """
-collide_with_body(::Particle, ::Body)::Union{Nothing, Particle} = error("No collide_with_body defined for this body")
+collide_with_body(::Particle, ::Body) = error("No collide_with_body defined for this body")
 
 
 """
@@ -62,7 +62,7 @@ struct Sphere{T_x<:Real, T_r<:Real} <: Body
 end
 
 
-function collide_with_body(particle::Particle, sphere::Sphere)::Union{Nothing, Particle}
+function collide_with_body(particle::Particle, sphere::Sphere)
   Δx = particle.x - sphere.x
   Δx², v² = Δx ⋅ Δx, particle.v ⋅ particle.v
   b = particle.v ⋅ Δx
@@ -94,7 +94,7 @@ struct CylinderSideWall{T_x<:Real, T_r<:Real} <: Body
 end
 
 
-function collide_with_body(particle::Particle, cylinder::CylinderSideWall)::Union{Nothing, Particle}
+function collide_with_body(particle::Particle, cylinder::CylinderSideWall)
   Δx = particle.x - cylinder.x_1
   x_2_1 = cylinder.x_2 - cylinder.x_1
   x_2_1² = x_2_1 ⋅ x_2_1
@@ -143,7 +143,7 @@ CompoundBody(bodies::Vararg{<:Body}) = CompoundBody(bodies)
 CompoundBody(bodies::AbstractVector{<:Body}) = CompoundBody(Tuple(bodies))
 
 
-function earlier(a::Union{Nothing, Particle}, b::Union{Nothing, Particle})
+function earlier(a, b)
   a === nothing && return b
   b === nothing && return a
   return a.t <= b.t ? a : b
@@ -175,8 +175,8 @@ end
 #   bodies::Array{Body, 1}
 # end
 
-# function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)::Union{Nothing, Particle}
-#   nearest_collision_particle::Union{Nothing, Particle} = nothing
+# function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)
+#   nearest_collision_particle = nothing
 #   for body in compound_body.bodies
 #     collided_particle = collide_with_body(particle, body)
 #     nearest_collision_particle = earlier(nearest_collision_particle, collided_particle)
@@ -245,7 +245,7 @@ function IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L<:Real, T_r<
 end
 
 
-function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)::Union{Nothing, Particle}
+function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)
   return collide_with_body(particle, helicoid.elements)
 end
 
