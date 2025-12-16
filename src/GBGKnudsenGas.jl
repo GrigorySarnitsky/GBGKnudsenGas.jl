@@ -347,10 +347,10 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
     end
   end
 
-  collision_probability = sample_size / (sample_size + sum(missed_sums))
+  collision_probability = T(sample_size) / (T(sample_size) + sum(missed_sums))
   
-  F = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
-  M = - sum(M_sums) / sample_size * collision_probability * π * domain_radius^2
+  F = - sum(F_sums) / T(sample_size) * collision_probability * π * domain_radius^2
+  M = - sum(M_sums) / T(sample_size) * collision_probability * π * domain_radius^2
 
   return (F = F, M = M, P_hit = collision_probability)
 end
