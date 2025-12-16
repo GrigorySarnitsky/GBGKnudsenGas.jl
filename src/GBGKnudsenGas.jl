@@ -56,15 +56,9 @@ collide_with_body(::Particle, ::Body)::Union{Nothing, Particle} = error("No coll
 
 Sphere of radius `r` centered at point `x`.
 """
-struct Sphere{T<:Real} <: Body
-  x::SVector{3,T}
-  r::T
-end
-
-
-function Sphere(x::SVector{3,T₁}, r::T₂) where {T₁<:Real, T₂<:Real}
-  T = promote_type(T₁, T₂)
-  Sphere{T}(SVector{3,T}(x), convert(T, r))
+struct Sphere{T_x<:Real, T_r<:Real} <: Body
+  x::SVector{3,T_x}
+  r::T_r
 end
 
 
@@ -93,10 +87,10 @@ Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radiu
 
 Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicoid`.
 """
-struct CylinderSideWall{T<:Real} <: Body
-  x_1::SVector{3,T}
-  x_2::SVector{3,T}
-  r  ::T
+struct CylinderSideWall{T_x<:Real, T_r<:Real} <: Body
+  x_1::SVector{3,T_x}
+  x_2::SVector{3,T_x}
+  r  ::T_r
 end
 
 
@@ -199,54 +193,55 @@ A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod 
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
-struct IsotropicHelicoid{T<:Real} <: Body
-  cube_side_length::T
-  r::T
+struct IsotropicHelicoid{T_L<:Real, T_r<:Real} <: Body
+  cube_side_length::T_L
+  r::T_r
   elements::CompoundBody
 end
 
 
-function IsotropicHelicoid(cube_side_length, r)
+function IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L<:Real, T_r<:Real}
   L = cube_side_length / 6
   return IsotropicHelicoid(cube_side_length, r,
-  CompoundBody(
     CompoundBody(
-      CylinderSideWall(SA[ 1,  2,  3] * L,            SA[ 2,  1, -3] * L, r),
-                Sphere(SA[ 1,  2,  3] * L, r), Sphere(SA[ 2,  1, -3] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[-2,  1,  3] * L, SA[-1,  2, -3] * L, r),
-                Sphere(SA[-2,  1,  3] * L, r), Sphere(SA[-1,  2, -3] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[-1, -2,  3] * L,            SA[-2, -1, -3] * L, r),
-                Sphere(SA[-1, -2,  3] * L, r), Sphere(SA[-2, -1, -3] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 2, -1,  3] * L,            SA[ 1, -2, -3] * L, r),
-                Sphere(SA[ 2, -1,  3] * L, r), Sphere(SA[ 1, -2, -3] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 2,  3,  1] * L,            SA[ 1, -3,  2] * L, r),
-                Sphere(SA[ 2,  3,  1] * L, r), Sphere(SA[ 1, -3,  2] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[-1,  3,  2] * L,            SA[-2, -3,  1] * L, r),
-                Sphere(SA[-1,  3,  2] * L, r), Sphere(SA[-2, -3,  1] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 1,  3, -2] * L,            SA[ 2, -3, -1] * L, r),
-                Sphere(SA[ 1,  3, -2] * L, r), Sphere(SA[ 2, -3, -1] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[-2,  3, -1] * L,            SA[-1, -3, -2] * L, r),
-                Sphere(SA[-2,  3, -1] * L, r), Sphere(SA[-1, -3, -2] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 3,  1,  2] * L,            SA[-3,  2,  1] * L, r),
-                Sphere(SA[ 3,  1,  2] * L, r), Sphere(SA[-3,  2,  1] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 3, -2,  1] * L,            SA[-3, -1,  2] * L, r),
-                Sphere(SA[ 3, -2,  1] * L, r), Sphere(SA[-3, -1,  2] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 3, -1, -2] * L,            SA[-3, -2, -1] * L, r),
-                Sphere(SA[ 3, -1, -2] * L, r), Sphere(SA[-3, -2, -1] * L, r)),
-    CompoundBody(
-      CylinderSideWall(SA[ 3,  2, -1] * L,            SA[-3,  1, -2] * L, r),
-                Sphere(SA[ 3,  2, -1] * L, r), Sphere(SA[-3,  1, -2] * L, r)),
-  ))
+      CompoundBody(
+        CylinderSideWall(SA[ 1,  2,  3] * L,            SA[ 2,  1, -3] * L, r),
+                  Sphere(SA[ 1,  2,  3] * L, r), Sphere(SA[ 2,  1, -3] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[-2,  1,  3] * L, SA[-1,  2, -3] * L, r),
+                  Sphere(SA[-2,  1,  3] * L, r), Sphere(SA[-1,  2, -3] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[-1, -2,  3] * L,            SA[-2, -1, -3] * L, r),
+                  Sphere(SA[-1, -2,  3] * L, r), Sphere(SA[-2, -1, -3] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 2, -1,  3] * L,            SA[ 1, -2, -3] * L, r),
+                  Sphere(SA[ 2, -1,  3] * L, r), Sphere(SA[ 1, -2, -3] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 2,  3,  1] * L,            SA[ 1, -3,  2] * L, r),
+                  Sphere(SA[ 2,  3,  1] * L, r), Sphere(SA[ 1, -3,  2] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[-1,  3,  2] * L,            SA[-2, -3,  1] * L, r),
+                  Sphere(SA[-1,  3,  2] * L, r), Sphere(SA[-2, -3,  1] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 1,  3, -2] * L,            SA[ 2, -3, -1] * L, r),
+                  Sphere(SA[ 1,  3, -2] * L, r), Sphere(SA[ 2, -3, -1] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[-2,  3, -1] * L,            SA[-1, -3, -2] * L, r),
+                  Sphere(SA[-2,  3, -1] * L, r), Sphere(SA[-1, -3, -2] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 3,  1,  2] * L,            SA[-3,  2,  1] * L, r),
+                  Sphere(SA[ 3,  1,  2] * L, r), Sphere(SA[-3,  2,  1] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 3, -2,  1] * L,            SA[-3, -1,  2] * L, r),
+                  Sphere(SA[ 3, -2,  1] * L, r), Sphere(SA[-3, -1,  2] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 3, -1, -2] * L,            SA[-3, -2, -1] * L, r),
+                  Sphere(SA[ 3, -1, -2] * L, r), Sphere(SA[-3, -2, -1] * L, r)),
+      CompoundBody(
+        CylinderSideWall(SA[ 3,  2, -1] * L,            SA[-3,  1, -2] * L, r),
+                  Sphere(SA[ 3,  2, -1] * L, r), Sphere(SA[-3,  1, -2] * L, r)),
+    )
+  )
 end
 
 
@@ -265,12 +260,12 @@ Sample an initial particle state for a gas in thermal equilibrium flowing past a
 * The time `Particle.t` is set to `0.0`.
 """
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
-  v = std_v * SA[randn(), randn(), randn()] .+ mean_v
+  T = promote_type(eltype(mean_v), typeof(std_v), typeof(domain_radius))
+  v = std_v * SA[randn(T), randn(T), randn(T)] .+ mean_v
   e_v = normalize(v)
-  a = SA[randn(), randn(), randn()]
+  a = SA[randn(T), randn(T), randn(T)]
   b = normalize(a .- (a ⋅ e_v) * e_v)
-  x = -e_v * domain_radius .+ b * √rand() * domain_radius
-  T = eltype(v)
+  x = -e_v * domain_radius .+ b * √rand(T) * domain_radius
   return Particle(v, x, zero(T))
 end
 
