@@ -262,9 +262,17 @@ Sample an initial particle state for a gas in thermal equilibrium flowing past a
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   T = promote_type(eltype(mean_v), typeof(std_v), typeof(domain_radius))
   v = std_v * SA[randn(T), randn(T), randn(T)] .+ mean_v
+  
+  iszero(v ⋅ v) && return sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
+  
   e_v = normalize(v)
   a = SA[randn(T), randn(T), randn(T)]
-  b = normalize(a .- (a ⋅ e_v) * e_v)
+  
+  a_⊥ = a .- (a ⋅ e_v) * e_v
+  iszero(a_⊥ ⋅ a_⊥) && return sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
+  b = normalize(a_⊥)
+
+  #b = normalize(a .- (a ⋅ e_v) * e_v)
   x = -e_v * domain_radius .+ b * √rand(T) * domain_radius
   return Particle(v, x, zero(T))
 end
