@@ -62,6 +62,12 @@ struct Sphere{T<:Real} <: Body
 end
 
 
+function Sphere(x::SVector{3,T₁}, r::T₂) where {T₁<:Real, T₂<:Real}
+  T = promote_type(T₁, T₂)
+  Sphere{T}(SVector{3,T}(x), convert(T, r))
+end
+
+
 function collide_with_body(particle::Particle, sphere::Sphere)::Union{Nothing, Particle}
   Δx = particle.x - sphere.x
   Δx², v² = Δx ⋅ Δx, particle.v ⋅ particle.v
