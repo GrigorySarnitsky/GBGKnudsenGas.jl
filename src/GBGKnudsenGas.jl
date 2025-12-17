@@ -21,11 +21,11 @@ using Base.Threads
 
 
 """
-    Particle(v::SVector{3, T}, x::SVector{3, T}, t::T) where {T<:Real}
+    Particle(v::SVector{3, T}, x::SVector{3, T}, t::T) where {T <: Real}
 
-Represent a state of a single point-particle (velocity vector `v` and position vector `x`) at time `t`.
+State of a single point-particle with velocity vector `v` and position vector `x` at time `t`.
 """
-struct Particle{T<:Real}
+struct Particle{T <: Real}
   v::SVector{3, T}
   x::SVector{3, T}
   t::T
@@ -52,12 +52,12 @@ collide_with_body(::Particle, ::Body) = error("No collide_with_body defined for 
 
 """
     Sphere <: Body
-    Sphere(x::SVector{3, Float64}, r::Float64)
+    Sphere(x::SVector{3, T_x}, r::T_r) where {T_x <: Real, T_r <: Real}
 
 Sphere of radius `r` centered at point `x`.
 """
-struct Sphere{T_x<:Real, T_r<:Real} <: Body
-  x::SVector{3,T_x}
+struct Sphere{T_x <: Real, T_r <: Real} <: Body
+  x::SVector{3, T_x}
   r::T_r
 end
 
@@ -81,15 +81,15 @@ end
 
 """
     CylinderSideWall <: Body
-    CylinderSideWall(x_1::SVector{3, Float64}, x_2::SVector{3, Float64}, r::Float64)
+    CylinderSideWall(x_1::SVector{3, T_x}, x_2::SVector{3, T_x}, r::T_r) where {T_x <: Real, T_r <: Real}
 
-Finite circular cylinder defined by its axis endpoints `x_1` and `x_2` and radius `r`.
+Finite circular cylinder defined by its axis endpoints `x_1`, `x_2` and radius `r`.
 
-Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. Endcaps can be added via `CompoundBody`, like we do in `IsotropicHelicoid`.
+Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. End caps can be added via [`CompoundBody`](@ref), like we do in [`IsotropicHelicoid`](@ref).
 """
-struct CylinderSideWall{T_x<:Real, T_r<:Real} <: Body
-  x_1::SVector{3,T_x}
-  x_2::SVector{3,T_x}
+struct CylinderSideWall{T_x <: Real, T_r <: Real} <: Body
+  x_1::SVector{3, T_x}
+  x_2::SVector{3, T_x}
   r  ::T_r
 end
 
@@ -121,20 +121,16 @@ end
 
 """
     CompoundBody <: Body
-    CompoundBody{T<:Tuple{Vararg{<:Body}}}
+    CompoundBody{T <: Tuple{Vararg{<:Body}}}
 
-A compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
+Compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
 
-This type should be the default choice for representing compound bodies, as it is usually faster.
-
-Use the convenience constructors
+Convenience constructors:
 
     CompoundBody(bodies::Vararg{<:Body})
     CompoundBody(bodies::AbstractVector{<:Body})
-
-to build instances.
 """
-struct CompoundBody{T<:Tuple{Vararg{<:Body}}} <: Body
+struct CompoundBody{T <: Tuple{Vararg{<:Body}}} <: Body
   bodies::T
 end
 
@@ -187,20 +183,20 @@ end
 
 """
     IsotropicHelicoid <: Body
-    IsotropicHelicoid(cube_side_length::Float64, r::Float64)
+    IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
 
-A model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`. This cube side length indirectly defines the length of each rod.
+Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`. This cube side length indirectly defines the length of each rod.
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
-struct IsotropicHelicoid{T_L<:Real, T_r<:Real, T_el<:CompoundBody} <: Body
+struct IsotropicHelicoid{T_L <: Real, T_r <: Real, T_el <: CompoundBody} <: Body
   cube_side_length::T_L
   r::T_r
   elements::T_el
 end
 
 
-function IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L<:Real, T_r<:Real}
+function IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
   L = cube_side_length / 6
   return IsotropicHelicoid(cube_side_length, r,
     CompoundBody(
@@ -255,9 +251,12 @@ end
 
 Sample an initial particle state for a gas in thermal equilibrium flowing past a body:
 
-* The velocity `Particle.v` is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`.
+* The velocity `Particle.v` is drawn from a 3D normal distribution with isotropic standard deviation `std_v` and mean drift `mean_v`. The respective PDF with ``\\boldsymbol v_0``, ``\\sigma_v`` and ``\\langle \\boldsymbol v_0 \\rangle`` for `v`, `std_v` and `mean_v`,  is
+```math
+f(\\boldsymbol v_0) = \\frac{1}{(\\sqrt{2 \\pi \\sigma_v^2})^3} \\exp \\biggl[- \\frac{(\\boldsymbol v_0 - \\langle \\boldsymbol v_0 \\rangle) \\cdot (\\boldsymbol v_0 - \\langle \\boldsymbol v_0 \\rangle)}{2 \\sigma_v^2}\\biggr].
+```
 * The initial position `Particle.x` is drawn uniformly on the disk of radius `domain_radius`; the disk is oriented perpendicular to `Particle.v` and is located at a distance `domain_radius` from the domain center.
-* The time `Particle.t` is set to `0.0`.
+* The time `Particle.t` is set to zero.
 """
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   T = eltype(mean_v)
@@ -273,19 +272,18 @@ end
 """
     find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
 
-Repeatedly draw particles from [`sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)`](@ref) until one collides with `body`.
+Repeatedly sample particles from a gas in thermal equilibrium flowing past `body` (via [`sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)`](@ref)) until one collides with `body`.
 
 Arguments:
 - `body`: body past which the gas flows.
-- `mean_v`: mean velocity of gas particles.
+- `mean_v`: mean (drift) velocity of gas particles.
 - `std_v`: isotropic velocity standard deviation of gas particles.
-- `domain_radius`: the radius of a spherical simulation domain centered at ``(0, 0, 0)``, which the body must fully fit into.
+- `domain_radius`: the radius of the spherical simulation domain centered at ``(0, 0, 0)`` that fully contains `body`.
 
-Returns tuple `(particle_before, particle_after, missed_particles_number)` where:
-
-- `particle_before::Particle`: particle state before the collision.
-- `particle_after::Particle`: particle state after the collision.
-- `missed_particles_number::Int64` number of non-colliding particles encountered before a hit was found.
+Returns `(particle_before, particle_after, missed_particles_number)`:
+- `particle_before`: particle state before the collision.
+- `particle_after`: particle state immediately after the first collision with `body`.
+- `missed_particles_number`: number of sampled non-colliding particles before the first hit.
 """
 function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
   missed_particles_number = 0
@@ -306,16 +304,19 @@ end
 """
     force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
 
-Calculate force and torque a flow of a Knudsen gas at thermal equilibrium excerts on a body. Both the force and the torque are normalized by the gas density (``\\boldsymbol F\rho``, ``\\boldsymbol M\rho``).
+Monte Carlo estimate of the kinematic force and torque exerted by a uniform flow of Knudsen gas in thermal equilibrium
+on `body`. Kinematic force and the torque are those normalized by the gas mass density.
 
 Arguments:
 - `body`: body past which the gas flows.
-- `torque_point`: point with respect to which the flow is computed.
-- `mean_v`: mean velocity of gas particles.
-- `std_v`: isotropic velocity standard deviation of gas particles.
-- `max_collisions`: maximum number of collisions of the particle with the body. The first one is always computed, but
-- `domain_radius`: the radius of a spherical simulation domain centered at ``(0, 0, 0)``, which the body must fully fit into.
-- `sample_size`: number of colliding particles used for the Monte Carlo estimation of the force and torque.
+- `torque_point`: point about which the torque is computed.
+- `mean_v`: mean (drift) velocity of gas particles used by [`sample_particle_state_uniform_flow`](@ref).
+- `std_v`: isotropic velocity standard deviation used by [`sample_particle_state_uniform_flow`](@ref).
+- `max_collisions`: maximum number of successive collisions tracked for each particle (including the first).
+- `domain_radius`: the radius of the spherical simulation domain centered at ``(0, 0, 0)`` that fully contains `body`.
+- `sample_size`: number of colliding particles used in the Monte Carlo estimator.
+
+Returns a named tuple `(F, M, P_hit)`, where `P_hit` is the estimated probability that a drawn particle hits `body`.
 
 The code is multithreaded with `Base.Threads` to take advantage of multi-core CPUs.
 """
