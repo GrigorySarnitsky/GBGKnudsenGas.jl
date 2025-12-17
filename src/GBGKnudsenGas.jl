@@ -316,14 +316,26 @@ Arguments:
 - `domain_radius`: the radius of the spherical simulation domain centered at ``(0, 0, 0)`` that fully contains `body`.
 - `sample_size`: number of colliding particles used in the Monte Carlo estimator.
 
-Returns a named tuple `(F, M, P_hit)`, where `P_hit` is the estimated probability that a drawn particle hits `body`.
+Returns a named tuple `(F, M, ΣF, ΣM, P_hit)`:
+- `F`: estimated kinematic force vector.
+- `M`: estimated kinematic torque vector about `torque_point`.
+- `ΣF`: Monte Carlo covariance matrix of the estimator `F` (a `3×3` matrix).
+- `ΣM`: Monte Carlo covariance matrix of the estimator `M` (a `3×3` matrix).
+- `P_hit`: estimated probability that a drawn particle hits `body`.
 
-The code is multithreaded with `Base.Threads` to take advantage of multi-core CPUs.
+Notes:
+- `ΣF` and `ΣM` quantify sampling uncertainty from the finite number of colliding particles (`sample_size`), treating the prefactor `P_hit * π * domain_radius^2` as deterministic (i.e. uncertainty in `P_hit` itself is not propagated).
+- The code is multithreaded with `Base.Threads` to take advantage of multi-core CPUs.
 """
 function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
   T = eltype(mean_v)
-  F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
-  M_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
+  
+  F_sums  = [zero(SVector{3, T}) for _ in 1:nthreads()]
+  M_sums  = [zero(SVector{3, T}) for _ in 1:nthreads()]
+
+  F²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
+  M²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
+  
   missed_sums = zeros(Int, nthreads())
 
   @threads for i in 1:sample_size
@@ -332,8 +344,10 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
 
     Δv = p_a.v - p_b.v
     w  = norm(p_b.v)
-    F_sums[tid] += w * Δv
-    M_sums[tid] += w * (p_a.x - torque_point) × Δv
+
+    Δf = w * Δv
+    Δm = w * (p_a.x - torque_point) × Δv
+    
     missed_sums[tid] += missed
     
     for _ in 2:max_collisions
@@ -343,17 +357,33 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
       if isnothing(p_a) break end
       
       Δv = p_a.v - p_b.v
-      F_sums[tid] += w * Δv
-      M_sums[tid] += w * (p_a.x - torque_point) × Δv
+
+      Δf += w * Δv
+      Δm += w * (p_a.x - torque_point) × Δv
     end
+
+    F_sums[tid] += Δf
+    M_sums[tid] += Δm
+  
+    F²_sums[tid] += Δf * Δf'
+    M²_sums[tid] += Δm * Δm'
   end
 
-  collision_probability = T(sample_size) / (T(sample_size) + sum(missed_sums))
+  sample_size_T = T(sample_size)
   
-  F = - sum(F_sums) / T(sample_size) * collision_probability * π * domain_radius^2
-  M = - sum(M_sums) / T(sample_size) * collision_probability * π * domain_radius^2
+  collision_probability = sample_size_T / (sample_size_T + sum(missed_sums))
+  A = collision_probability * π * domain_radius^2
+  
+  F  = - sum(F_sums) / sample_size_T * A
+  M  = - sum(M_sums) / sample_size_T * A
 
-  return (F = F, M = M, P_hit = collision_probability)
+  F² =   sum(F²_sums) / sample_size_T * A^2
+  M² =   sum(M²_sums) / sample_size_T * A^2
+
+  ΣF = (F² - F * F') / (sample_size_T - 1)
+  ΣM = (M² - M * M') / (sample_size_T - 1)
+
+  return (F = F, M = M, ΣF = ΣF, ΣM = ΣM, P_hit = collision_probability)
 end
 
 
