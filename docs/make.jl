@@ -17,6 +17,7 @@ makedocs(
   format   = Documenter.HTML(),
   pages    = [
     "Home"                  => "index.md",
+    "Usage"                 => "usage.md",
     "Example: Epstein drag" => "Epstein_drag.md",
     "API"                   => "api.md"
   ],
