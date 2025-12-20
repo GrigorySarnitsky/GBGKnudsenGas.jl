@@ -350,13 +350,15 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   
   missed_sums = zeros(Int, nthreads())
 
+  inv_var_v = 1 / (std_v^2) 
+
   @threads for i in 1:sample_size
     p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
     tid = threadid()
 
     Δv = p_a.v - p_b.v
     w  = norm(p_b.v)
-    s  = (p_b.v - mean_v) / (std_v^2) 
+    s  = (p_b.v - mean_v) * inv_var_v
 
     Δf = w * Δv
     Δm = w * (p_a.x - torque_point) × Δv
