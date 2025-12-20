@@ -301,6 +301,12 @@ function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius
 end
 
 
+@inline tensor4(A::SMatrix{3,3,T,9}, B::SMatrix{3,3,T,9}) where {T} = begin
+  a = SVector{9, T}(Tuple(A))
+  b = SVector{9, T}(Tuple(B))
+  SArray{Tuple{3, 3, 3, 3}, T, 4, 81}(Tuple(a * b'))
+end
+
 """
     force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
 
@@ -330,11 +336,17 @@ Notes:
 function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
   T = eltype(mean_v)
   
-  F_sums  = [zero(SVector{3, T}) for _ in 1:nthreads()]
-  M_sums  = [zero(SVector{3, T}) for _ in 1:nthreads()]
+  F_sums     = [zero(SVector{3, T}) for _ in 1:nthreads()]
+  M_sums     = [zero(SVector{3, T}) for _ in 1:nthreads()]
+  
+  dF_v_sums  = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
+  dM_v_sums  = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
 
   F²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
   M²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
+
+  dF_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
+  dM_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
   
   missed_sums = zeros(Int, nthreads())
 
@@ -344,10 +356,11 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
 
     Δv = p_a.v - p_b.v
     w  = norm(p_b.v)
+    s  = (p_b.v - mean_v) / (std_v^2) 
 
     Δf = w * Δv
     Δm = w * (p_a.x - torque_point) × Δv
-    
+
     missed_sums[tid] += missed
     
     for _ in 2:max_collisions
@@ -362,11 +375,20 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
       Δm += w * (p_a.x - torque_point) × Δv
     end
 
+    Δdf_v = Δf * s'
+    Δdm_v = Δm * s'
+    
     F_sums[tid] += Δf
     M_sums[tid] += Δm
+
+    dF_v_sums[tid] += Δdf_v
+    dM_v_sums[tid] += Δdm_v
   
     F²_sums[tid] += Δf * Δf'
     M²_sums[tid] += Δm * Δm'
+
+    dF_v²_sums[tid] += tensor4(Δdf_v, Δdf_v)
+    dM_v²_sums[tid] += tensor4(Δdm_v, Δdm_v)
   end
 
   sample_size_T = T(sample_size)
@@ -377,13 +399,22 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   F  = - sum(F_sums) / sample_size_T * A
   M  = - sum(M_sums) / sample_size_T * A
 
+  dF_v = - sum(dF_v_sums) / sample_size_T * A
+  dM_v = - sum(dM_v_sums) / sample_size_T * A
+  
   F² =   sum(F²_sums) / sample_size_T * A^2
   M² =   sum(M²_sums) / sample_size_T * A^2
+
+  dF_v² = sum(dF_v²_sums) / sample_size_T * A^2
+  dM_v² = sum(dM_v²_sums) / sample_size_T * A^2
 
   ΣF = (F² - F * F') / (sample_size_T - 1)
   ΣM = (M² - M * M') / (sample_size_T - 1)
 
-  return (F = F, M = M, ΣF = ΣF, ΣM = ΣM, P_hit = collision_probability)
+  ΣdF_v = (dF_v² - tensor4(dF_v, dF_v)) / (sample_size_T - 1)
+  ΣdM_v = (dM_v² - tensor4(dM_v, dM_v)) / (sample_size_T - 1)
+
+  return (F = F, M = M, dF_v = dF_v, dM_v = dM_v, ΣF = ΣF, ΣM = ΣM, ΣdF_v = ΣdF_v, ΣdM_v = ΣdM_v, P_hit = collision_probability)
 end
 
 
