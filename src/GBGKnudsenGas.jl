@@ -301,7 +301,7 @@ end
 
 
 tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} =
-  @SArray [A[i,j] * B[k,l] for i=1:3, j=1:3, k=1:3, l=1:3]
+  @SArray [A[i,j] * B[k,l] for i in 1:3, j in 1:3, k in 1:3, l in 1:3]
 
 # tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} = begin
 #   a = SVector{9, T}(Tuple(A))
@@ -350,6 +350,16 @@ Notes:
 
 # Example
 
+```julia
+force_and_torque_uniform_flow(
+    body           = Sphere(SA[0.0, 0.0, 1.0], 0.5),
+    torque_point   = SA[0.0, 0.0, 0.0],
+    mean_v         = SA[1.0, 0.0, 0.0],
+    std_v          = 1.0,
+    domain_radius  = 2.0,
+    max_collisions = 1,
+    sample_size    = 10^7)
+```
 
 """
 function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
