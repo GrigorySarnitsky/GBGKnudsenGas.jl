@@ -93,7 +93,7 @@ Recall from the [introduction,](index.md) that
 The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using `sample_particle_state_uniform_flow`. Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
 
 ```math
-\boldsymbol F = - \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol x_0) \bigm| \text{hit} \bigr> .
+\boldsymbol F = - \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigm| \text{hit} \bigr> .
 ```
 
 To evaluate this conditional average, we first define a helper function `find_single_collision`, which repeatedly draws particles from the initial distribution until one collides with the body. It accepts the following arguments:

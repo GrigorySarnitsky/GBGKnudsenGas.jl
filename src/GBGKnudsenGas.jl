@@ -10,7 +10,6 @@ All particle–body collisions are assumed to be specular. The package uses a Ca
 """
 module GBGKnudsenGas
 
-
 export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, collide_with_body,
  sample_particle_state_uniform_flow, find_colliding_particle_uniform_flow, force_and_torque_uniform_flow
 
@@ -301,16 +300,7 @@ function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius
 end
 
 
-function sample_one_particle_uniform_flow(body, mean_v, std_v, domain_radius)
-  p_b = sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
-  p_a = collide_with_body(p_b, body)
-  hit = !isnothing(p_a)
-  return p_b, hit ? p_a : p_b, hit
-end
-
-
-
-@inline tensor4(A::SMatrix{3,3,T,9}, B::SMatrix{3,3,T,9}) where {T} = begin
+@inline tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} = begin
   a = SVector{9, T}(Tuple(A))
   b = SVector{9, T}(Tuple(B))
   SArray{Tuple{3, 3, 3, 3}, T, 4, 81}(Tuple(a * b'))
@@ -357,14 +347,13 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   dF_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
   dM_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
   
-  # missed_sums = zeros(Int, nthreads())
-  hit_sums = zeros(Int, nthreads())
+  missed_sums  = zeros(Int, nthreads())
+  missed²_sums = zeros(Int, nthreads())
 
   inv_var_v = 1 / (std_v^2) 
 
   @threads for i in 1:sample_size
-    # p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
-    p_b, p_a, hit = sample_one_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+    p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
     tid = threadid()
 
     Δv = p_a.v - p_b.v
@@ -374,8 +363,7 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
     Δf = w * Δv
     Δm = w * (p_a.x - torque_point) × Δv
 
-    # missed_sums[tid] += missed
-    hit_sums[tid] += hit
+    missed_sums[tid]  += missed
     
     for _ in 2:max_collisions
       p_b = p_a
@@ -407,11 +395,10 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
 
   sample_size_T = T(sample_size)
   
-  # collision_probability = sample_size_T / (sample_size_T + sum(missed_sums))
-  # A = collision_probability * π * domain_radius^2
-
-  collision_probability = sum(hit_sums) / sample_size_T
-  A     = π * domain_radius^2
+  P_hit  = sample_size_T / (sample_size_T + sum(missed_sums))
+  ΣP_hit = P_hit^2 * (1 - P_hit) / sample_size_T
+  
+  A = P_hit * π * domain_radius^2
   
   F  = - sum(F_sums) / sample_size_T * A
   M  = - sum(M_sums) / sample_size_T * A
@@ -425,13 +412,14 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   dF_v² = sum(dF_v²_sums) / sample_size_T * A^2
   dM_v² = sum(dM_v²_sums) / sample_size_T * A^2
 
-  ΣF = (F² - F * F') / (sample_size_T - 1)
-  ΣM = (M² - M * M') / (sample_size_T - 1)
+  ΣF = (F² - F * F') / (sample_size_T - 1) + ΣP_hit / P_hit^2 * F * F'
+  ΣM = (M² - M * M') / (sample_size_T - 1) + ΣP_hit / P_hit^2 * M * M'
 
-  ΣdF_v = (dF_v² - tensor4(dF_v, dF_v)) / (sample_size_T - 1)
-  ΣdM_v = (dM_v² - tensor4(dM_v, dM_v)) / (sample_size_T - 1)
+  ΣdF_v = (dF_v² - tensor4(dF_v, dF_v)) / (sample_size_T - 1) + ΣP_hit / P_hit^2 * tensor4(dF_v, dF_v)
+  ΣdM_v = (dM_v² - tensor4(dM_v, dM_v)) / (sample_size_T - 1) + ΣP_hit / P_hit^2 * tensor4(dM_v, dM_v)
 
-  return (F = F, M = M, dF_v = dF_v, dM_v = dM_v, ΣF = ΣF, ΣM = ΣM, ΣdF_v = ΣdF_v, ΣdM_v = ΣdM_v, P_hit = collision_probability)
+  return ( F =  F,  M =  M,  dF_v =  dF_v,  dM_v =  dM_v,  P_hit = P_hit,
+          ΣF = ΣF, ΣM = ΣM, ΣdF_v = ΣdF_v, ΣdM_v = ΣdM_v, ΣP_hit = ΣP_hit)
 end
 
 
