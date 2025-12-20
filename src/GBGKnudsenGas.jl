@@ -348,7 +348,6 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   dM_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
   
   missed_sums  = zeros(Int, nthreads())
-  missed²_sums = zeros(Int, nthreads())
 
   inv_var_v = 1 / (std_v^2) 
 
@@ -398,7 +397,8 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   P_hit  = sample_size_T / (sample_size_T + sum(missed_sums))
   ΣP_hit = P_hit^2 * (1 - P_hit) / sample_size_T
   
-  A = P_hit * π * domain_radius^2
+  A  =  P_hit * π * domain_radius^2
+  A² = (P_hit^2 + ΣP_hit) * (π * domain_radius^2)^2
   
   F  = - sum(F_sums) / sample_size_T * A
   M  = - sum(M_sums) / sample_size_T * A
@@ -406,11 +406,11 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   dF_v = - sum(dF_v_sums) / sample_size_T * A
   dM_v = - sum(dM_v_sums) / sample_size_T * A
   
-  F² =   sum(F²_sums) / sample_size_T * A^2
-  M² =   sum(M²_sums) / sample_size_T * A^2
+  F² =   sum(F²_sums) / sample_size_T * A²
+  M² =   sum(M²_sums) / sample_size_T * A²
 
-  dF_v² = sum(dF_v²_sums) / sample_size_T * A^2
-  dM_v² = sum(dM_v²_sums) / sample_size_T * A^2
+  dF_v² = sum(dF_v²_sums) / sample_size_T * A²
+  dM_v² = sum(dM_v²_sums) / sample_size_T * A²
 
   ΣF = (F² - F * F') / (sample_size_T - 1) + ΣP_hit / P_hit^2 * F * F'
   ΣM = (M² - M * M') / (sample_size_T - 1) + ΣP_hit / P_hit^2 * M * M'
