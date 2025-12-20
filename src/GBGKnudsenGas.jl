@@ -185,7 +185,7 @@ end
     IsotropicHelicoid <: Body
     IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
 
-Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`. This cube side length indirectly defines the length of each rod.
+Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`, centered at ``(0, 0, 0)``. This cube side length indirectly defines the length of each rod.
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
@@ -301,6 +301,15 @@ function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius
 end
 
 
+function sample_one_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+  p_b = sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
+  p_a = collide_with_body(p_b, body)
+  hit = !isnothing(p_a)
+  return p_b, hit ? p_a : p_b, hit
+end
+
+
+
 @inline tensor4(A::SMatrix{3,3,T,9}, B::SMatrix{3,3,T,9}) where {T} = begin
   a = SVector{9, T}(Tuple(A))
   b = SVector{9, T}(Tuple(B))
@@ -348,12 +357,14 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   dF_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
   dM_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
   
-  missed_sums = zeros(Int, nthreads())
+  # missed_sums = zeros(Int, nthreads())
+  hit_sums = zeros(Int, nthreads())
 
   inv_var_v = 1 / (std_v^2) 
 
   @threads for i in 1:sample_size
-    p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+    # p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
+    p_b, p_a, hit = sample_one_particle_uniform_flow(body, mean_v, std_v, domain_radius)
     tid = threadid()
 
     Δv = p_a.v - p_b.v
@@ -363,7 +374,8 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
     Δf = w * Δv
     Δm = w * (p_a.x - torque_point) × Δv
 
-    missed_sums[tid] += missed
+    # missed_sums[tid] += missed
+    hit_sums[tid] += hit
     
     for _ in 2:max_collisions
       p_b = p_a
@@ -395,8 +407,11 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
 
   sample_size_T = T(sample_size)
   
-  collision_probability = sample_size_T / (sample_size_T + sum(missed_sums))
-  A = collision_probability * π * domain_radius^2
+  # collision_probability = sample_size_T / (sample_size_T + sum(missed_sums))
+  # A = collision_probability * π * domain_radius^2
+
+  collision_probability = sum(hit_sums) / sample_size_T
+  A     = π * domain_radius^2
   
   F  = - sum(F_sums) / sample_size_T * A
   M  = - sum(M_sums) / sample_size_T * A
