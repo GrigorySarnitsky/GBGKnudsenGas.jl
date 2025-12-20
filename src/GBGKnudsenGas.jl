@@ -300,14 +300,14 @@ function find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius
 end
 
 
-# tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} =
-#   @SArray [A[i,j] * B[k,l] for i=1:3, j=1:3, k=1:3, l=1:3]
+tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} =
+  @SArray [A[i,j] * B[k,l] for i=1:3, j=1:3, k=1:3, l=1:3]
 
-tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} = begin
-  a = SVector{9, T}(Tuple(A))
-  b = SVector{9, T}(Tuple(B))
-  SArray{Tuple{3, 3, 3, 3}, T, 4, 81}(Tuple(a * transpose(b)))
-end
+# tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} = begin
+#   a = SVector{9, T}(Tuple(A))
+#   b = SVector{9, T}(Tuple(B))
+#   SArray{Tuple{3, 3, 3, 3}, T, 4, 81}(Tuple(a * transpose(b)))
+# end
 
 """
     force_and_torque_uniform_flow(;
