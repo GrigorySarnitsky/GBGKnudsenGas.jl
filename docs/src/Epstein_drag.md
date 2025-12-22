@@ -61,7 +61,7 @@ see the papers
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-The full code of this computation is available in `examples/epstein_drag.jl`.
+The full code of this computation is available in `examples/epstein_drag.jl`. That's a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For a more advance code for simulating the same flow see the source of [`force_and_torque_uniform_flow`](@ref).
 
 ### Computing $\boldsymbol F$
 
@@ -236,3 +236,5 @@ which produces
   0.00014   1.00011  -2.0e-5
  -7.0e-5   -0.00026   1.00039
 ```
+
+Note that automatic differentiation is inherrintly inaccurate Jacobian computation in the case of complex compounds bodies, however it works for a single sphere as above.
