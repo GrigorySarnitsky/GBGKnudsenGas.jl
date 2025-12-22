@@ -3,9 +3,6 @@
 
 We provide a concrete example of how to use `GBGKnudsenGas.jl`. Namely, we compute the Epstein drag on a sphere and compare it to analytical predictions.
 
-```@contents
-Pages = ["Epstein_drag.md"]
-```
 
 ## Epstein drag
 
