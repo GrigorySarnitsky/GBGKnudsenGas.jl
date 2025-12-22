@@ -111,7 +111,7 @@ leading, for example, to the following formula for the Jacobian of force:
 
 ## Complete example: Epstein drag
 
-We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` by calculating the drag exerted on a sphere by a uniform flow of a Knudsen gas at thermal equilibrium, see the [respective page.](Epstein_drag.md)
+We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to build your own flow setup using Epstein drag calculation as an example. See the [respective page.](Epstein_drag.md)
 
 
 ## Extending the package
