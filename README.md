@@ -9,7 +9,9 @@ An example demonstrating a complete flow simulation around a sphere is included.
 
 All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note that `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
 
-The `GBG` part in the name `GBGKnudsenGas` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
+The `GBG` part in the name `GBGKnudsenGas.jl` comes from the city of Göteborg (Gothenburg, Sweden), where the primary development took place.
+
+
 
 
 ## Installation
@@ -36,5 +38,5 @@ using GBGKnudsenGas
 
 ## Documentation
 
-Documentation with the full API reference is available from [https://grigorysarnitsky.github.io/GBGKnudsenGas.jl/](https://grigorysarnitsky.github.io/GBGKnudsenGas.jl/).
+Documentation with the full API reference is available at [https://grigorysarnitsky.github.io/GBGKnudsenGas.jl/](https://grigorysarnitsky.github.io/GBGKnudsenGas.jl/).
 
