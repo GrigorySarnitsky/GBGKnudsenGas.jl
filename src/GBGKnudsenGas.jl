@@ -10,7 +10,7 @@ All particle–body collisions are assumed to be specular. The package uses a Ca
 """
 module GBGKnudsenGas
 
-export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoid, CompoundBody, collide_with_body,
+export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoidRods, CompoundBody, collide_with_body,
  sample_particle_state_uniform_flow, find_colliding_particle_uniform_flow, force_and_torque_uniform_flow
 
 
@@ -84,7 +84,7 @@ end
 
 Finite circular cylinder defined by its axis endpoints `x_1`, `x_2` and radius `r`.
 
-Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. End caps can be added via [`CompoundBody`](@ref), like we do in [`IsotropicHelicoid`](@ref).
+Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. End caps can be added via [`CompoundBody`](@ref), like we do in [`IsotropicHelicoidRods`](@ref).
 """
 struct CylinderSideWall{T_x <: Real, T_r <: Real} <: Body
   x_1::SVector{3, T_x}
@@ -181,23 +181,23 @@ end
 
 
 """
-    IsotropicHelicoid <: Body
-    IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
+    IsotropicHelicoidRods <: Body
+    IsotropicHelicoidRods(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
 
 Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`, centered at ``(0, 0, 0)``. This cube side length indirectly defines the length of each rod.
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
-struct IsotropicHelicoid{T_L <: Real, T_r <: Real, T_el <: CompoundBody} <: Body
+struct IsotropicHelicoidRods{T_L <: Real, T_r <: Real, T_el <: CompoundBody} <: Body
   cube_side_length::T_L
   r::T_r
   elements::T_el
 end
 
 
-function IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
+function IsotropicHelicoidRods(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
   L = cube_side_length / 6
-  return IsotropicHelicoid(cube_side_length, r,
+  return IsotropicHelicoidRods(cube_side_length, r,
     CompoundBody(
       CompoundBody(
         CylinderSideWall(SA[ 1,  2,  3] * L,            SA[ 2,  1, -3] * L, r),
@@ -240,7 +240,7 @@ function IsotropicHelicoid(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_
 end
 
 
-function collide_with_body(particle::Particle, helicoid::IsotropicHelicoid)
+function collide_with_body(particle::Particle, helicoid::IsotropicHelicoidRods)
   return collide_with_body(particle, helicoid.elements)
 end
 
@@ -423,8 +423,19 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   end
 
   sample_size_T = T(sample_size)
+
+  # The ubiased estimator for P_hit and the estimator for ΣP_hit were suggested by ChatGPT 5.2 Extended Thinking
+  # with the following rationale:
+  #
+  # We draw particles until we accumulate `sample_size` hits (successes), not a fixed number
+  # of attempted particles. With i.i.d. attempts and per-attempt hit probability p, the miss count K before r hits is
+  # negative-binomial: K ~ NegBin(r, p). Under this fixed-hit stopping rule, p is estimated from (r,K); the unbiased
+  # estimator is p̂ = (r-1)/(r+K-1) (for r>1), which we use here.
+  #
+  # ΣP_hit below is the large-r (delta-method / Fisher-information) variance for this negative-binomial setting:
+  # Var(p̂) ≈ p^2 (1-p) / r. It is asymptotically correct; for small r it is only an approximation.
   
-  P_hit  = sample_size_T / (sample_size_T + sum(missed_sums))
+  P_hit  = (sample_size_T - 1) / (sample_size_T + sum(missed_sums) - 1)
   ΣP_hit = P_hit^2 * (1 - P_hit) / sample_size_T
   
   A  =  P_hit * π * domain_radius^2
@@ -448,7 +459,7 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   ΣdF_v = (dF_v² - tensor4(dF_v, dF_v)) / (sample_size_T - 1) + ΣP_hit / P_hit^2 * tensor4(dF_v, dF_v)
   ΣdM_v = (dM_v² - tensor4(dM_v, dM_v)) / (sample_size_T - 1) + ΣP_hit / P_hit^2 * tensor4(dM_v, dM_v)
 
-  return ( F =  F,  M =  M,  dF_v =  dF_v,  dM_v =  dM_v,  P_hit = P_hit,
+  return ( F =  F,  M =  M,  dF_v =  dF_v,  dM_v =  dM_v,  P_hit =  P_hit,
           ΣF = ΣF, ΣM = ΣM, ΣdF_v = ΣdF_v, ΣdM_v = ΣdM_v, ΣP_hit = ΣP_hit)
 end
 

@@ -16,7 +16,7 @@ Body
 Sphere
 CylinderSideWall
 CompoundBody
-IsotropicHelicoid
+IsotropicHelicoidRods
 ```
 
 ## Functions
