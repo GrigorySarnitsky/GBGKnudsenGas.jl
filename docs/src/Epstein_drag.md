@@ -237,4 +237,4 @@ which produces
  -7.0e-5   -0.00026   1.00039
 ```
 
-Note that automatic differentiation is inherrintly inaccurate Jacobian computation in the case of complex compounds bodies, however it works for a single sphere as above.
+Note that automatic differentiation is inherently inaccurate when computing Jacobians for complex compound bodies. However, it works for a single sphere, as shown above.
