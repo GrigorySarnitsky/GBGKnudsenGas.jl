@@ -103,7 +103,7 @@ Finally, `GBGKnudsenGas.jl` can directly compute the kinematic force $\boldsymbo
 \frac{\partial f}{\partial \langle \boldsymbol v_0 \rangle} = \frac{\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle}{\sigma_v^2} f,
 ```
 
-leading to the following formula for the force Jacobian:
+leading, for example, to the following formula for the Jacobian of force:
 
 ```math
 \frac{\partial \boldsymbol F}{\partial \langle \boldsymbol v_0 \rangle} = - \frac{\rho  \pi r_\text{dom}^2}{\sigma_v^2} \bigl< \| \boldsymbol v_0 \| \, \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \otimes (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \bigr>.
