@@ -1,8 +1,6 @@
 # Example: Epstein drag calculation
 
-
-We provide a concrete example of how to use `GBGKnudsenGas.jl`. Namely, we compute the Epstein drag on a sphere and compare it to analytical predictions.
-
+We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to build your own flow setup using Epstein drag calculation as an example. If one is simply interested in calculating the forces and torques acting on a body in a uniform flow of equilibrium Knudsen gas, one should just use [`force_and_torque_uniform_flow`](@ref).
 
 ## Epstein drag
 
@@ -39,17 +37,7 @@ see the papers
 * Epstein, Paul S. (1924). "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23(6), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
 * Li, Zhigang, and Wang, Hai (2003). "Drag force, diffusion coefficient, and electric mobility of small particles. I. Theory applicable to the free-molecule regime." _Physical Review E,_ 68(6), 061206, [10.1103/PhysRevE.68.061206](https://doi.org/10.1103/PhysRevE.68.061206).
 
-For arbitrary Mach numbers, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
-
-```math
-\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},
-```
-
-see the papers
-* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
-* Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
-
-Kwok's formula is accurate within 1% of the exact expression. The exact formula for $\boldsymbol F$ was derived by Baines et al. (1965):
+For arbitrary Mach numbers, the exact formula for $\boldsymbol F$ was derived by Baines et al. (1965):
 
 ```math
 \boldsymbol F_\text{Baines et al. (1965)}
@@ -59,6 +47,16 @@ Kwok's formula is accurate within 1% of the exact expression. The exact formula 
 
 see the original paper
 * Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
+
+Later, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
+
+```math
+\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},
+```
+
+see the papers
+* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
+* Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
 
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
