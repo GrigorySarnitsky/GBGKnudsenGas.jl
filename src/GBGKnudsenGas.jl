@@ -379,13 +379,15 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
   
   missed_sums  = zeros(Int, nthreads())
 
+  inv_var_v = 1 / (std_v^2) 
+
   @threads for i in 1:sample_size
     p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
     tid = threadid()
 
     Δv = p_a.v - p_b.v
     w  = norm(p_b.v)
-    s  = (p_b.v - mean_v)
+    s  = (p_b.v - mean_v) * inv_var_v
 
     Δf = w * Δv
     Δm = w * (p_a.x - torque_point) × Δv
@@ -420,31 +422,45 @@ function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_c
     dM_v²_sums[tid] += tensor4(Δdm_v, Δdm_v)
   end
 
-  N = T(sample_size) + sum(missed_sums)
-  A = π * domain_radius^2
+  sample_size_T = T(sample_size)
+
+  # The ubiased estimator for P_hit and the estimator for ΣP_hit were suggested by ChatGPT 5.2 Extended Thinking
+  # with the following rationale:
+  #
+  # We draw particles until we accumulate `sample_size` hits (successes), not a fixed number
+  # of attempted particles. With i.i.d. attempts and per-attempt hit probability p, the miss count K before r hits is
+  # negative-binomial: K ~ NegBin(r, p). Under this fixed-hit stopping rule, p is estimated from (r,K); the unbiased
+  # estimator is p̂ = (r-1)/(r+K-1) (for r>1), which we use here.
+  #
+  # ΣP_hit below is the large-r (delta-method / Fisher-information) variance for this negative-binomial setting:
+  # Var(p̂) ≈ p^2 (1-p) / r. It is asymptotically correct; for small r it is only an approximation.
   
-  F  = - sum(F_sums) / N * A
-  M  = - sum(M_sums) / N * A
-
-  dF_v = - sum(dF_v_sums) / N * (A / std_v^2)
-  dM_v = - sum(dM_v_sums) / N * (A / std_v^2)
+  P_hit  = (sample_size_T - 1) / (sample_size_T + sum(missed_sums) - 1)
+  ΣP_hit = P_hit^2 * (1 - P_hit) / sample_size_T
   
-  F² = sum(F²_sums) / N * A^2
-  M² = sum(M²_sums) / N * A^2
-
-  dF_v² = sum(dF_v²_sums) / N * (A / std_v^2)^2
-  dM_v² = sum(dM_v²_sums) / N * (A / std_v^2)^2
-
-  ΣF = (F² - F * F') / (N - 1)
-  ΣM = (M² - M * M') / (N - 1)
-
-  ΣdF_v = (dF_v² - tensor4(dF_v, dF_v)) / (N - 1)
-  ΣdM_v = (dM_v² - tensor4(dM_v, dM_v)) / (N - 1)
-
-  P_hit = T(sample_size) / N
+  A  =  P_hit * π * domain_radius^2
+  A² = (P_hit^2 + ΣP_hit) * (π * domain_radius^2)^2
   
-  return ( F =  F,  M =  M,  dF_v =  dF_v,  dM_v =  dM_v,  P_hit = P_hit,
-          ΣF = ΣF, ΣM = ΣM, ΣdF_v = ΣdF_v, ΣdM_v = ΣdM_v)
+  F  = - sum(F_sums) / sample_size_T * A
+  M  = - sum(M_sums) / sample_size_T * A
+
+  dF_v = - sum(dF_v_sums) / sample_size_T * A
+  dM_v = - sum(dM_v_sums) / sample_size_T * A
+  
+  F² =   sum(F²_sums) / sample_size_T * A²
+  M² =   sum(M²_sums) / sample_size_T * A²
+
+  dF_v² = sum(dF_v²_sums) / sample_size_T * A²
+  dM_v² = sum(dM_v²_sums) / sample_size_T * A²
+
+  ΣF = (F² - F * F') / (sample_size_T - 1) + ΣP_hit / P_hit^2 * F * F'
+  ΣM = (M² - M * M') / (sample_size_T - 1) + ΣP_hit / P_hit^2 * M * M'
+
+  ΣdF_v = (dF_v² - tensor4(dF_v, dF_v)) / (sample_size_T - 1) + ΣP_hit / P_hit^2 * tensor4(dF_v, dF_v)
+  ΣdM_v = (dM_v² - tensor4(dM_v, dM_v)) / (sample_size_T - 1) + ΣP_hit / P_hit^2 * tensor4(dM_v, dM_v)
+
+  return ( F =  F,  M =  M,  dF_v =  dF_v,  dM_v =  dM_v,  P_hit =  P_hit,
+          ΣF = ΣF, ΣM = ΣM, ΣdF_v = ΣdF_v, ΣdM_v = ΣdM_v, ΣP_hit = ΣP_hit)
 end
 
 
