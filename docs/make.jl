@@ -19,6 +19,7 @@ makedocs(
     "Home"                  => "index.md",
     "Usage"                 => "usage.md",
     "Example: Epstein drag" => "Epstein_drag.md",
+    "Development"           => "development.md",
     "API"                   => "api.md"
   ],
 )
