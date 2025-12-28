@@ -15,7 +15,7 @@ with $\boldsymbol F_i$ being the value of $\boldsymbol F$ for $i$-th colliding p
 ```math
   \begin{align*}
     \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC, naive})
-    &= \bigl< \bigl[ \boldsymbol F - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr] \otimes \bigl[ \boldsymbol F - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr] \bigr> \\
+    &= \bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC, naive} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC, naive} - \langle \boldsymbol F \rangle\bigr] \bigr> \\
     &= \frac{1}{(N_\text{miss} + N_\text{hit}) (N_\text{miss} + N_\text{hit} - 1)} \sum_{i = 1}^{N_\text{hit}} \bigl[ \boldsymbol F_i - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr] \otimes \bigl[ \boldsymbol F_i - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr].
   \end{align*}
 ```
@@ -45,7 +45,9 @@ Then the estimator for $\langle \boldsymbol F \rangle$ can be written down as
 ```math
 \langle \boldsymbol F \rangle_\text{MC} = \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit}) = \frac{1}{N_\text{miss} + N_\text{hit} - 1} \frac{N_\text{hit} - 1}{N_\text{hit}} \sum_{i=1}^{N_\text{hit}} \boldsymbol F_i.
 ```
-Compare this to the naive estimator $\langle \boldsymbol F \rangle_\text{MC, naive}$. Next, we want to quantify the accuracy of $\langle \boldsymbol F \rangle_\text{MC}$, i.e. find its covariance. For this we first find the covariances of $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} $ and $P_\text{MC}(\text{hit})$.
+Compare this to the naive estimator $\langle \boldsymbol F \rangle_\text{MC, naive}$.
+
+Next, we want to quantify the accuracy of $\langle \boldsymbol F \rangle_\text{MC}$, i.e. find its covariance. For this we first find the covariances of $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} $ and $P_\text{MC}(\text{hit})$.
 
 ### Conditional estimator covariances
 
@@ -104,12 +106,12 @@ we finally get
   \end{align*}
 ```
 
-#### Covariance of $P_\text{MC}(\text{hit})$
+#### Variance of $P_\text{MC}(\text{hit})$
 
-Now we calculate the covariance of $P_\text{MC}(\text{hit})$,
+Now we calculate the variance of $P_\text{MC}(\text{hit})$,
 
 ```math
-  \operatorname{cov}(P_\text{MC}(\text{hit})) = \bigl< \bigl[P_\text{MC}(\text{hit}) - P(\text{hit})\bigr]^2 \bigr>.
+  \operatorname{var}(P_\text{MC}(\text{hit})) = \bigl< \bigl[P_\text{MC}(\text{hit}) - P(\text{hit})\bigr]^2 \bigr>.
 ```
 
 For this we need to use the probability mass function $f$ of $N_\text{miss}$:
@@ -118,16 +120,39 @@ For this we need to use the probability mass function $f$ of $N_\text{miss}$:
   f(N_\text{miss}) = \frac{(N_\text{miss} + N_\text{hit} - 1)!}{(N_\text{hit} - 1)! N_\text{miss}!} P^{N_\text{hit}}(\text{hit}) \bigl[1 - P(\text{hit}) \bigr]^{N_\text{miss}}.
 ```
 
-The accuracy. Using the unbiaseness of $P_\text{MC}(\text{hit})$, we calculate
+Now we proceed with calculating $P_\text{MC}(\text{hit})$ using unbiaseness of $P_\text{MC}(\text{hit})$ and studying in the limit of large $N_\text{hit}$:
 ```math
   \begin{align*}
     \operatorname{var}(P_\text{MC}(\text{hit}))
     &= \bigl< \bigl[P_\text{MC}(\text{hit}) - P(\text{hit})\bigr]^2 \bigr> \\
-    &= \langle P_\text{MC}^2 \rangle - P^2(\text{hit}) \\
-    &= \frac{N_\text{hit} - 1}{N_\text{miss} + N_\text{hit} - 1},
+    &= \sum_{N_{\text{miss}} = 0}^\infty \biggl( \frac{N_\text{hit} - 1}{N_\text{miss} + N_\text{hit} - 1} - P(\text{hit})\biggr)^{\!2} \frac{(N_\text{miss} + N_\text{hit} - 1)!}{(N_\text{hit} - 1)! N_\text{miss}!} P^{N_\text{hit}}(\text{hit}) \bigl[1 - P(\text{hit}) \bigr]^{N_\text{miss}} \\
+    &= P^2(\text{hit}) \bigl[ {}_2F_1(1, 1, N_\text{hit}, 1 - P(\text{hit})) - 1 \bigr] \\
+    &= P^2(\text{hit}) \biggl[ \frac{1 - P(\text{hit})}{N_\text{hit}} + \frac{2(1 - P(\text{hit}))^2}{N_\text{hit}(N_\text{hit} + 1)} + \frac{6 (1 - P(\text{hit}))^3}{N_\text{hit}(N_\text{hit} + 1)(N_\text{hit} + 2)} + \ldots \biggr],
   \end{align*}
 ```
 
+where is ${}_2 F_1$ the [hypergeometric function](https://en.wikipedia.org/wiki/Hypergeometric_function). The above can be checked with the following Mathematica code:
+
+```mathematica
+f = (m + n - 1)!/((n - 1)! m!) (1 - p)^m p^n;
+pmc = (n - 1)/(m + n - 1);
+s = FullSimplify[Sum[(pmc - p)^2 f, {m, 0, Infinity}]]
+Sum[SeriesCoefficient[s, {(1 - p), 0, k}] (1 - p)^k, {k, 0, 4}]
+```
+
+with an output
+
+```mathematica
+p^2 (-1 + Hypergeometric2F1[1, 1, n, 1 - p])
+
+((1 - p) p^2)/n + (2 (1 - p)^2 p^2)/(n (1 + n)) + (6 (1 - p)^3 p^2)/(n (1 + n) (2 + n)) + (24 (1 - p)^4 p^2)/(n (1 + n) (2 + n) (3 + n))
+```
+
+Thus to estimate the accuracy of $P_\text{MC}(\text{hit})$ we use the below estimator for its variance:
+
+```math
+  \operatorname{var}(P_\text{MC}(\text{hit})) = \frac{1}{N_\text{hit}} P^2(\text{hit}) \bigl[1 - P(\text{hit})\bigr].
+```
 
 
 ### Covariance of the unconditional estimator $\langle \boldsymbol F \rangle$
