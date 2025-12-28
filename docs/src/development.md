@@ -120,7 +120,7 @@ For this we need to use the probability mass function $f$ of $N_\text{miss}$:
   f(N_\text{miss}) = \frac{(N_\text{miss} + N_\text{hit} - 1)!}{(N_\text{hit} - 1)! N_\text{miss}!} P^{N_\text{hit}}(\text{hit}) \bigl[1 - P(\text{hit}) \bigr]^{N_\text{miss}}.
 ```
 
-Now we proceed with calculating $P_\text{MC}(\text{hit})$ using unbiaseness of $P_\text{MC}(\text{hit})$ and studying in the limit of large $N_\text{hit}$:
+Now we proceed with calculating $P_\text{MC}(\text{hit})$, studying in the limit of large $N_\text{hit}$:
 ```math
   \begin{align*}
     \operatorname{var}(P_\text{MC}(\text{hit}))
@@ -151,7 +151,7 @@ p^2 (-1 + Hypergeometric2F1[1, 1, n, 1 - p])
 Thus to estimate the accuracy of $P_\text{MC}(\text{hit})$ we use the below estimator for its variance:
 
 ```math
-  \operatorname{var}(P_\text{MC}(\text{hit})) = \frac{1}{N_\text{hit}} P^2(\text{hit}) \bigl[1 - P(\text{hit})\bigr].
+  \operatorname{var}(P_\text{MC}(\text{hit})) = \frac{1}{N_\text{hit}} P_\text{MC}^2(\text{hit}) \bigl[1 - P_\text{MC}(\text{hit})\bigr].
 ```
 
 
