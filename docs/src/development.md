@@ -1,5 +1,7 @@
 # Development tips for GBGKnudsenGas.jl
 
+Here we assmeble tips on the advanced usage, extension and development of  `GBGKnudsenGas.jl`. It is written a bit loosly, but if you got to the point you need to read it, you should be abgle to get through.
+
 ## Estimators for means and their standard errors
 
 When studying the flow of a Knudsen gas past a body, it is natural to collect statistics only from gas particles that actually hit the body, since particles that miss it neither change their state nor affect the body. In a Monte Carlo simulation, this corresponds to collecting data based on a fixed, predetermined number $N_\text{hit}$ of collided particles (and stopping once we reach $N_\text{hit}$). If $N_\text{miss}$ denotes the number of particles that miss the body, then the total number of simulated particles is $N_\text{miss} + N_\text{hit}$. Unlike $N_\text{hit}$, $N_\text{miss}$ is a random variable, and consequently so is the total number of simulated particles. This randomness requires care when computing statistics across all of the particles.
@@ -151,11 +153,46 @@ p^2 (-1 + Hypergeometric2F1[1, 1, n, 1 - p])
 Thus to estimate the accuracy of $P_\text{MC}(\text{hit})$ we use the below estimator for its variance:
 
 ```math
-  \operatorname{var}(P_\text{MC}(\text{hit})) = \frac{1}{N_\text{hit}} P_\text{MC}^2(\text{hit}) \bigl[1 - P_\text{MC}(\text{hit})\bigr].
+  \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit})) = \frac{1}{N_\text{hit}} P_\text{MC}^2(\text{hit}) \bigl[1 - P_\text{MC}(\text{hit})\bigr].
 ```
 
-
 ### Covariance of the unconditional estimator $\langle \boldsymbol F \rangle$
+
+With the known covariances of $P_\text{MC}$ and $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}$ we are well equiped for finding the covariacne of $\langle \boldsymbol F \rangle_\text{MC} = \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit})$. Since we a dealing with the product of two independent random variables, its coavariacne is
+
+```math
+  \begin{align*}
+  \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})
+  &= \Bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \Bigr> \\
+  &= \operatorname{cov}_\text{MC}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit})) \\
+  &= P_\text{MC}^2(\text{hit}) \operatorname{cov}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) +
+  \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \operatorname{var}(P_\text{MC}(\text{hit})).
+  \end{align*}
+```
+
+### Summary of the estimators
+
+To summarize, consider a Monte Carlo simulation of a flow of a Knudsen gas past a body. We run it untill we find $N_\text{hit}$ particles that collided with the body and then stop. During the simulatin we also counted $N_\text{miss}$ particles that hit the body. Let $\boldsymbol F$ be a (tensor) quantity to be averaged over the particles, for example, the change in particle momentum. Crucially, for non-colliding particles, $\boldsymbol F = 0$. Our goal is to compute the average $\langle \boldsymbol F \rangle$ across all of the particles, both that hit the body and that missed it. Porper Monte carlo estimators for $\langle \boldsymbol F \rangle$ and its covariance are:
+
+```math
+\boxed{
+  \begin{align*}
+    \langle \boldsymbol F \rangle_\text{MC}
+    &=\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit}) \\[2ex]
+    \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})
+    &= \Bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \Bigr> \\
+    &= P_\text{MC}^2(\text{hit}) \, \operatorname{cov}_\text{MC}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \, \operatorname{var}_\text{MC}(P_\text{MC}(\text{hit})) \\[1ex]
+    \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}
+    &= \frac{1}{N_\text{hit}} \sum_{i = 1}^{N_\text{hit}} \boldsymbol F_i, \\[2ex]
+    P_\text{MC}(\text{hit})
+    &= \frac{N_\text{hit} - 1}{N_\text{miss} + N_\text{hit} - 1}, \\[2ex]
+    \operatorname{cov}_\text{MC}(\boldsymbol F \mid \text{hit}) 
+    &= \frac{1}{N_\text{hit} - 1} \biggl[ \frac{1}{N_\text{hit}} \sum_{i=1}^{N_\text{hit}} \boldsymbol F_i \otimes \boldsymbol F_i - \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}\biggr], \\[2ex]
+    \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit}))
+    &= \frac{1}{N_\text{hit}} P_\text{MC}^2(\text{hit}) \bigl[1 - P_\text{MC}(\text{hit})\bigr].
+  \end{align*}
+}
+```
 
 ## Extending the package
 
