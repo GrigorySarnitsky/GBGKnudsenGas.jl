@@ -18,7 +18,7 @@ with $\boldsymbol F_i$ being the value of $\boldsymbol F$ for $i$-th colliding p
   \begin{align*}
     \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC, naive})
     &= \bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC, naive} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC, naive} - \langle \boldsymbol F \rangle\bigr] \bigr> \\
-    &= \frac{1}{(N_\text{miss} + N_\text{hit}) (N_\text{miss} + N_\text{hit} - 1)} \sum_{i = 1}^{N_\text{hit}} \bigl[ \boldsymbol F_i - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr] \otimes \bigl[ \boldsymbol F_i - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr].
+    &= \frac{1}{(N_\text{miss} + N_\text{hit}) (N_\text{miss} + N_\text{hit} - 1)} \biggl[ \sum_{i = 1}^{N_\text{hit}} \bigl[ \boldsymbol F_i - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr] \otimes \bigl[ \boldsymbol F_i - \langle \boldsymbol F \rangle_\text{MC, naive} \bigr] + N_\text{miss} \langle \boldsymbol F \rangle_\text{MC, naive} \otimes \langle \boldsymbol F \rangle_\text{MC, naive} \biggr].
   \end{align*}
 ```
 
@@ -165,7 +165,11 @@ With the known covariances of $P_\text{MC}$ and $\langle \boldsymbol F \mid \tex
   \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})
   &= \Bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \Bigr> \\
   &= \operatorname{cov}_\text{MC}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit})) \\
-  &= P_\text{MC}^2(\text{hit}) \operatorname{cov}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) +
+  &= \Bigl< P_\text{MC}(\text{hit})^2 \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \Bigr> - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \bigl< P_\text{MC}(\text{hit})^2 \bigr> \Bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \Bigr> - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \Bigl[ \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit})) + P_\text{MC}(\text{hit})^2 \Bigr] \Bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \Bigm| \text{hit} \Bigr> P(\text{hit})- \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \Bigl[ \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit})) + P_\text{MC}(\text{hit})^2 \Bigr] \Bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \Bigm| \text{hit} \Bigr> P(\text{hit})- \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \langle P_\text{MC}^2(\text{hit}) \rangle \operatorname{cov}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) +
   \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \operatorname{var}(P_\text{MC}(\text{hit})).
   \end{align*}
 ```
@@ -181,12 +185,12 @@ To summarize, consider a Monte Carlo simulation of a flow of a Knudsen gas past 
     &=\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit}) \\[2ex]
     \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})
     &= \Bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \Bigr> \\
-    &= P_\text{MC}^2(\text{hit}) \, \operatorname{cov}_\text{MC}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \, \operatorname{var}_\text{MC}(P_\text{MC}(\text{hit})) \\[1ex]
+    &= P_\text{MC}^2(\text{hit}) \, \operatorname{cov}_\text{MC}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \mid \text{hit}) + \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \, \operatorname{var}_\text{MC}(P_\text{MC}(\text{hit})) \\[1ex]
     \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}
     &= \frac{1}{N_\text{hit}} \sum_{i = 1}^{N_\text{hit}} \boldsymbol F_i, \\[2ex]
     P_\text{MC}(\text{hit})
     &= \frac{N_\text{hit} - 1}{N_\text{miss} + N_\text{hit} - 1}, \\[2ex]
-    \operatorname{cov}_\text{MC}(\boldsymbol F \mid \text{hit}) 
+    \operatorname{cov}_\text{MC}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \mid \text{hit})
     &= \frac{1}{N_\text{hit} - 1} \biggl[ \frac{1}{N_\text{hit}} \sum_{i=1}^{N_\text{hit}} \boldsymbol F_i \otimes \boldsymbol F_i - \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}\biggr], \\[2ex]
     \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit}))
     &= \frac{1}{N_\text{hit}} P_\text{MC}^2(\text{hit}) \bigl[1 - P_\text{MC}(\text{hit})\bigr].
