@@ -4,9 +4,9 @@ Here we assmeble tips on the advanced usage, extension and development of  `GBGK
 
 ## Estimators for means and their standard errors
 
-When studying the flow of a Knudsen gas past a body, it is natural to collect statistics only from gas particles that actually hit the body, since particles that miss it neither change their state nor affect the body. In a Monte Carlo simulation, this corresponds to collecting data based on a fixed, predetermined number $N_\text{hit}$ of collided particles (and stopping once we reach $N_\text{hit}$). If $N_\text{miss}$ denotes the number of particles that miss the body, then the total number of simulated particles is $N_\text{miss} + N_\text{hit}$. Unlike $N_\text{hit}$, $N_\text{miss}$ is a random variable, and consequently so is the total number of simulated particles. This randomness requires care when computing statistics across all of the particles.
+When studying the flow of a Knudsen gas past a body, it is natural to collect statistics only from gas particles that actually hit the body, since particles that miss it neither change their state nor affect the body. In a Monte Carlo simulation, this corresponds to collecting data based on a fixed, predetermined number $N_\text{hit}$ of collided particles (and stopping once we reach $N_\text{hit}$). If $N_\text{miss}$ denotes the number of particles that missed the body, then the total number of simulated particles is $N_\text{miss} + N_\text{hit}$. Unlike $N_\text{hit}$, $N_\text{miss}$ is a random variable, and consequently so is the total number of simulated particles. This randomness requires care when computing statistics across all of the particles.
 
-Let $\boldsymbol F$ be a (tensor) quantity to be averaged over the particles, for example, the change in particle momentum. Crucially, for non-colliding particles, $\boldsymbol F = 0$. Our goal is to compute the average $\langle \boldsymbol F \rangle$ across all of the particles, both that hit the body and that missed it. A naive Monte Carlo estimator one can come up with is
+Let $\boldsymbol F$ be a (tensor) quantity to be averaged over the particles, for example, the change in particle momentum. Crucially, for non-colliding particles, $\boldsymbol F = 0$. Our goal is to compute the average $\langle \boldsymbol F \rangle$ across all of the particles, both that hit the body and that missed it. One can come up with a naive Monte Carlo estimator 
 
 ```math
   \langle \boldsymbol F \rangle_\text{MC, naive} = \frac{1}{N_\text{miss} + N_\text{hit}} \sum_{i=1}^{N_\text{hit}} \boldsymbol F_i,
@@ -51,7 +51,7 @@ Compare this to the naive estimator $\langle \boldsymbol F \rangle_\text{MC, nai
 
 Next, we want to quantify the accuracy of $\langle \boldsymbol F \rangle_\text{MC}$, i.e. find its covariance. For this we first find the covariances of $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} $ and $P_\text{MC}(\text{hit})$.
 
-### Conditional estimator covariances
+### Covariances of the conditional estimators
 
 #### Covariance of $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}$
 
@@ -64,10 +64,10 @@ To quantify the accuracy of $\langle \boldsymbol F \mid \text{hit} \rangle_\text
 
 It helps to remember that $\langle {\cdot} \rangle$ here denotes averaging over the ensemble of Monte Carlo simulations, each of each having exactly $N_\text{hit}$ collided particles.
 
-To calculate this covariance, we use the unbiased property of $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}$ (its average coincides with the true average):
+To calculate $\operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} )$, we use the unbiased property of $\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}$ (its average coincides with the true average):
 
 ```math
-\bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigm| \text{hit} \bigr> = \langle \boldsymbol F \mid \text{hit} \rangle,
+\bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr> = \langle \boldsymbol F \mid \text{hit} \rangle,
 ```
 
 and that two measurements, $i$ and $j$, are statistically independent, leading to
@@ -98,7 +98,7 @@ Thus we confirmed the usual formula for the [standard error:](https://en.wikiped
 Using the [unbiased estimator for the covariance](https://en.wikipedia.org/wiki/Estimation_of_covariance_matrices)
 
 ```math
-  \operatorname{cov}_\text{MC}(\boldsymbol F \mid \text{hit}) = \frac{1}{N_\text{hit} - 1} \sum_{i=1}^{N_\text{hit}} \bigl[ \boldsymbol F_i - \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr] \otimes \bigl[ \boldsymbol F_i - \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr]
+  \operatorname{cov}_\text{MC}(\boldsymbol F \mid \text{hit}) = \frac{1}{N_\text{hit} - 1} \sum_{i=1}^{N_\text{hit}} \bigl[ \boldsymbol F_i - \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr] \otimes \bigl[ \boldsymbol F_i - \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr],
 ```
 
 we finally get
@@ -125,7 +125,7 @@ For this we need to use the probability mass function $f$ of $N_\text{miss}$:
   f(N_\text{miss}) = \frac{(N_\text{miss} + N_\text{hit} - 1)!}{(N_\text{hit} - 1)! N_\text{miss}!} P^{N_\text{hit}}(\text{hit}) \bigl[1 - P(\text{hit}) \bigr]^{N_\text{miss}}.
 ```
 
-Now we proceed with calculating $P_\text{MC}(\text{hit})$, studying in the limit of large $N_\text{hit}$:
+We proceed with calculating $P_\text{MC}(\text{hit})$, studying in the limit of large $N_\text{hit}$:
 ```math
   \begin{align*}
     \operatorname{var}(P_\text{MC}(\text{hit}))
@@ -153,7 +153,7 @@ p^2 (-1 + Hypergeometric2F1[1, 1, n, 1 - p])
 ((1 - p) p^2)/n + (2 (1 - p)^2 p^2)/(n (1 + n)) + (6 (1 - p)^3 p^2)/(n (1 + n) (2 + n)) + (24 (1 - p)^4 p^2)/(n (1 + n) (2 + n) (3 + n))
 ```
 
-Thus to estimate the accuracy of $P_\text{MC}(\text{hit})$ we use the below estimator for its variance:
+Thus to estimate the accuracy of $P_\text{MC}(\text{hit})$ we use the below biased estimator for its variance:
 
 ```math
   \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit})) = \frac{1}{N_\text{hit}} P_\text{MC}^2(\text{hit}) \bigl[1 - P_\text{MC}(\text{hit})\bigr].
@@ -168,25 +168,25 @@ With the known covariances of $P_\text{MC}$ and $\langle \boldsymbol F \mid \tex
   \operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})
   &= \Bigl< \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \otimes \bigl[ \langle \boldsymbol F \rangle_\text{MC} - \langle \boldsymbol F \rangle \bigr] \Bigr> \\
   &= \operatorname{cov}(\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit})) \\
-  &= \Bigl< P_\text{MC}(\text{hit})^2 \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \Bigr> - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
-  &= \bigl< P_\text{MC}(\text{hit})^2 \bigr> \bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr> - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
-  &= \Bigl[ \operatorname{var} (P_\text{MC}(\text{hit})) + P(\text{hit})^2 \Bigr] \Bigl[\operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \langle \boldsymbol F \mid \text{hit} \rangle\otimes \langle \boldsymbol F \mid \text{hit} \rangle \Bigr] - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
-  &= \langle P_\text{MC}(\text{hit})^2 \rangle \operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \operatorname{var} (P_\text{MC}(\text{hit})) \langle \boldsymbol F \mid \text{hit} \rangle \otimes \langle \boldsymbol F \mid \text{hit} \rangle.
+  &= \Bigl< P^2_\text{MC}(\text{hit}) \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \Bigr> - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \bigl< P^2_\text{MC}(\text{hit}) \bigr> \bigl< \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \bigr> - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \Bigl[ \operatorname{var} (P_\text{MC}(\text{hit})) + P^2(\text{hit}) \Bigr] \Bigl[\operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \langle \boldsymbol F \mid \text{hit} \rangle\otimes \langle \boldsymbol F \mid \text{hit} \rangle \Bigr] - \langle \boldsymbol F \rangle \otimes \langle \boldsymbol F \rangle \\
+  &= \langle P^2_\text{MC}(\text{hit}) \rangle \operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \operatorname{var} (P_\text{MC}(\text{hit})) \langle \boldsymbol F \mid \text{hit} \rangle \otimes \langle \boldsymbol F \mid \text{hit} \rangle.
   \end{align*}
 ```
 
-Then we use unbiased estimators for $\langle P_\text{MC}(\text{hit})^2 \rangle$ and $\langle \boldsymbol F \mid \text{hit} \rangle \otimes \langle \boldsymbol F \mid \text{hit} \rangle$
-
-So the Monte Carlo estimator for $\operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})$ is
+Then we estimate $\operatorname{cov}(\langle \boldsymbol F \rangle_\text{MC})$ as:
 
 ```math
   \operatorname{cov}_\text{MC}(\langle \boldsymbol F \rangle_\text{MC})
-  = \bigl[ P_\text{MC}(\text{hit})^2 + \operatorname{var} (P_\text{MC}(\text{hit})) \bigr] \operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \operatorname{var} (P_\text{MC}(\text{hit})) \, \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}.
+  = P^2_\text{MC}(\text{hit}) \operatorname{cov}_\text{MC}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit})) \, \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}.
 ```
+
+Note that this is a straightforward estimator which might be biased.
 
 ### Summary of the estimators
 
-To summarize, consider a Monte Carlo simulation of a flow of a Knudsen gas past a body. We run it untill we find $N_\text{hit}$ particles that collided with the body and then stop. During the simulatin we also count $N_\text{miss}$ particles that missed the body. Let $\boldsymbol F$ be a (tensor) quantity to be averaged over the particles, for example, the change in particle momentum. Crucially, for non-colliding particles, $\boldsymbol F = 0$. We want to compute the average $\langle \boldsymbol F \rangle$ across all of the particles, both that hit the body and that missed it. Proper Monte carlo estimators for $\langle \boldsymbol F \rangle$ and its covariance are:
+To summarize, consider a Monte Carlo simulation of a Knudsen gas flowing past a body. We run it until we find $N_\text{hit}$ particles that collided with the body and then stop. During the simulation we also count the number of particles that miss the body, $N_\text{miss}$. Let $\boldsymbol F$ be a (tensor) quantity to be averaged over the particles, for example, the change in particle momentum. Crucially, for non-colliding particles, $\boldsymbol F = 0$. We want to compute the average $\langle \boldsymbol F \rangle$ across all of the particles, both those that hit the body and those that miss it. Proper Monte Carlo estimators for $\langle \boldsymbol F \rangle$ and its covariance are:
 
 ```math
 \boxed{
@@ -194,8 +194,7 @@ To summarize, consider a Monte Carlo simulation of a flow of a Knudsen gas past 
     \langle \boldsymbol F \rangle_\text{MC}
     &=\langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} P_\text{MC}(\text{hit}) \\[2ex]
     \operatorname{cov}_\text{MC}(\langle \boldsymbol F \rangle_\text{MC})
-    & = \bigl[ P_\text{MC}(\text{hit})^2 + \operatorname{var} (P_\text{MC}(\text{hit})) \bigr] \operatorname{cov}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) \\
-    &\quad + \operatorname{var} (P_\text{MC}(\text{hit})) \, \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \\[1ex]
+    &= P^2_\text{MC}(\text{hit}) \operatorname{cov}_\text{MC}(\boldsymbol \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}) + \operatorname{var}_\text{MC} (P_\text{MC}(\text{hit})) \, \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \otimes \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC} \\[1ex]
     \langle \boldsymbol F \mid \text{hit} \rangle_\text{MC}
     &= \frac{1}{N_\text{hit}} \sum_{i = 1}^{N_\text{hit}} \boldsymbol F_i, \\[2ex]
     P_\text{MC}(\text{hit})
