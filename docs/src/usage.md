@@ -116,16 +116,4 @@ We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to b
 
 ## Extending the package
 
-To add another kind of body, you define a new body type (e.g. `Ellipsoid`) and implement the corresponding `collide_with_body` method:
-
-```julia
-collide_with_body(particle::Particle, elipsoid::Ellipsoid)::Union{Nothing, Particle}
-```
-
-The existing implementation for `Sphere` can be used for reference.
-
-As for non-specular collisions, I envision the following architecture. Each body type is extended with the property `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
-
-Totating bodies, in the limit of small rotational speed, can be added similarly to non-specular collisions. That's because to first order the body rotation merely modifies the collision law.
-
-Currently, arbitrary meshes for bodies are not supported, but that would be a valuable feature to add.
+We compiled [development tips](development.md) on extending the package.

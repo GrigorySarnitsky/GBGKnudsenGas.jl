@@ -61,7 +61,7 @@ see the papers
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-The full code of this computation is available in `examples/epstein_drag.jl`. That's a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For a more advance code for simulating the same flow see the source of [`force_and_torque_uniform_flow`](@ref).
+The full code of this computation is available in `examples/epstein_drag.jl`. That's a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For a more advance code for simulating the same flow see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md)
 
 ### Computing $\boldsymbol F$
 
