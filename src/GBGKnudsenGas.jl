@@ -184,7 +184,7 @@ end
     IsotropicHelicoidRods <: Body
     IsotropicHelicoidRods(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
 
-Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length`, centered at ``(0, 0, 0)``. This cube side length indirectly defines the length of each rod.
+Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length + 2r`, centered at ``(0, 0, 0)``. This cube side length indirectly defines the length of each rod.
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
