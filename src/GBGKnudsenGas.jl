@@ -3,10 +3,38 @@
 
 Simulate Knudsen flow of particles past a stationary body, where the particle mean free path is much larger than the body size. In this regime, particles interact with the body but not with each other. The body is assumed to be massive, so particle collisions do not move it.
 
-The module provides building blocks to create your own flow setups. The body is built from simple geometries (currently spheres and cylinders). The package includes tools to compute the next collision of a single particle with a body; you can use these to build multi-particle, multi-collision simulations. A simple computational domain for modelling a gas in thermal equilibrium flowing past a body is also provided.
+The module provides building blocks to create your own flow setups:
 
-All particle–body collisions are assumed to be specular. The package uses a Cartesian coordinate system. Note that `GBGKnudsenGas.jl` is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
+- geometric body primitives (currently [`Sphere`](@ref) and [`CylinderSideWall`](@ref)),
+- composition of bodies via [`CompoundBody`](@ref),
+- single-particle collision queries via [`collide_with_body`](@ref),
+- tools for modelling a gas in thermal equilibrium flowing past a body.
 
+## Collision model
+
+All particle–body collisions use a Maxwell reflection law with diffuse fraction ``\\alpha`` and wall thermal velocity scale ``\\sigma_{v_\\text{wall}}``:
+
+- ``\\alpha = 0``: purely specular reflection,
+- ``\\alpha = 1``: purely diffuse reflection,
+- ``0 < \\alpha < 1``: Bernoulli mixture of specular and diffuse reflection.
+
+A gas particle that reflects diffusely has an outgoing velocity ``\\boldsymbol v`` distributed according to the following probability density function, where ``\\boldsymbol n`` denotes the outward wall normal:
+
+```math
+f_\\text{diff}(\\boldsymbol v) = \\left\\{
+\\begin{aligned}
+&\\frac{\\boldsymbol v \\cdot \\boldsymbol n}{2 \\pi \\sigma_{v_\\text{wall}}^4} \\exp \\biggl(- \\frac{\\boldsymbol v \\cdot \\boldsymbol v}{2 \\sigma_{v_\\text{wall}}^2} \\biggr) && \\text{if \$ \\boldsymbol v \\cdot \\boldsymbol n > 0\$},\\\\
+& 0 && \\text{otherwise.}
+\\end{aligned}\\right.
+```
+
+Need to check this later.
+
+## Conventions
+
+- Cartesian coordinates are used throughout the package.
+- The package is purely kinematic: it works with distances, times, and velocities, but not masses or momenta.
+- Particles can reflect only from the exterior side of a body’s surface, so if a particle ever enters a body due to an error, it will freely exit again.
 """
 module GBGKnudsenGas
 
@@ -14,6 +42,7 @@ export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoidRods, Compound
  sample_particle_state_uniform_flow, find_colliding_particle_uniform_flow, force_and_torque_uniform_flow
 
 
+using Random
 using StaticArrays
 using LinearAlgebra
 using Base.Threads
@@ -28,6 +57,30 @@ struct Particle{T <: Real}
   v::SVector{3, T}
   x::SVector{3, T}
   t::T
+end
+
+
+function reflect_velocity(v, n, α, wall_std_v)
+  if α ≤ 0
+    return reflect_velocity_specularly(v, n)
+  elseif α ≥ 1
+    return reflect_velocity_diffusively(n, wall_std_v)
+  else
+    return  rand() < α ? reflect_velocity_diffusively(n, wall_std_v) : reflect_velocity_specularly(v, n)
+  end
+end
+
+
+function reflect_velocity_specularly(v, n)
+  return v - 2 * n * (v ⋅ n)
+end
+
+
+function reflect_velocity_diffusively(n, wall_std_v)
+  T = typeof(wall_std_v)
+  gaussian_v = wall_std_v * SA[randn(T), randn(T), randn(T)]
+  rayleigh_v = wall_std_v * √(2 * randexp(T))
+  return gaussian_v + (rayleigh_v - gaussian_v ⋅ n) * n
 end
 
 
@@ -51,13 +104,24 @@ collide_with_body(::Particle, ::Body) = error("No collide_with_body defined for 
 
 """
     Sphere <: Body
-    Sphere(x::SVector{3, T_x}, r::T_r) where {T_x <: Real, T_r <: Real}
+    Sphere(x::SVector{3}, r; α = zero(r), wall_std_v = one(r))
 
 Sphere of radius `r` centered at point `x`.
+
+Gas particles reflect from the sphere via the Maxwell reflection law with diffuse fraction `α` and wall thermal velocity scale `wall_std_v`.
 """
-struct Sphere{T_x <: Real, T_r <: Real} <: Body
-  x::SVector{3, T_x}
-  r::T_r
+struct Sphere{T <: Real} <: Body
+  x::SVector{3, T}
+  r::T
+  r²::T
+  α::T
+  wall_std_v::T
+end
+
+
+function Sphere(x::SVector{3}, r; α = zero(r), wall_std_v = one(r))
+  T = promote_type(eltype(x), typeof(r), typeof(α), typeof(wall_std_v))
+  Sphere(SVector{3,T}(x), T(r), T(r)^2, T(α), T(wall_std_v))
 end
 
 
@@ -65,14 +129,16 @@ function collide_with_body(particle::Particle, sphere::Sphere)
   Δx = particle.x - sphere.x
   Δx², v² = Δx ⋅ Δx, particle.v ⋅ particle.v
   b = particle.v ⋅ Δx
-  d = b^2 - v² * (Δx² - sphere.r^2)
+  d = b^2 - v² * (Δx² - sphere.r²)
   
-  if b > 0 || d < 0 || Δx² < sphere.r^2 || iszero(v²) return nothing end
+  if b > 0 || d < 0 || Δx² < sphere.r² || iszero(v²) return nothing end
   
   time_to_collision = (-b - √d) / v²
   x_at_collision  = particle.x + particle.v * time_to_collision
   Δx_at_collision = x_at_collision - sphere.x
-  v_after_collision = particle.v - 2 * Δx_at_collision * (particle.v ⋅ Δx_at_collision) / sphere.r^2
+  
+  n = Δx_at_collision / sphere.r
+  v_after_collision = reflect_velocity(particle.v, n, sphere.α, sphere.wall_std_v)
   
   return Particle(v_after_collision, x_at_collision, particle.t + time_to_collision)
 end
@@ -80,39 +146,54 @@ end
 
 """
     CylinderSideWall <: Body
-    CylinderSideWall(x_1::SVector{3, T_x}, x_2::SVector{3, T_x}, r::T_r) where {T_x <: Real, T_r <: Real}
+    CylinderSideWall(x_1::SVector{3}, x_2::SVector{3}, r; α = zero(r), wall_std_v = one(r))
 
 Finite circular cylinder defined by its axis endpoints `x_1`, `x_2` and radius `r`.
 
 Only the lateral surface (side wall) is present; end caps are not included and do not participate in collisions. End caps can be added via [`CompoundBody`](@ref), like we do in [`IsotropicHelicoidRods`](@ref).
+
+Gas particles reflect from the side wall via the Maxwell reflection law with diffuse fraction `α` and wall thermal velocity scale `wall_std_v`.
 """
-struct CylinderSideWall{T_x <: Real, T_r <: Real} <: Body
-  x_1::SVector{3, T_x}
-  x_2::SVector{3, T_x}
-  r  ::T_r
+struct CylinderSideWall{T <: Real} <: Body
+  x_1::SVector{3, T}
+  x_2::SVector{3, T}
+  r::T
+  axis::SVector{3, T}
+  l::T
+  r²::T
+  α::T
+  wall_std_v::T
+end
+
+
+function CylinderSideWall(x_1::SVector{3}, x_2::SVector{3}, r; α = zero(r), wall_std_v = one(r))
+  T = promote_type(eltype(x_1), eltype(x_2), typeof(r), typeof(α), typeof(wall_std_v))
+  axis = normalize(SVector{3,T}(x_2) - SVector{3,T}(x_1))
+  l = T(norm(SVector{3,T}(x_2) - SVector{3,T}(x_1)))
+  CylinderSideWall(SVector{3,T}(x_1), SVector{3,T}(x_2), T(r), axis, l, T(r)^2, T(α), T(wall_std_v))
 end
 
 
 function collide_with_body(particle::Particle, cylinder::CylinderSideWall)
   Δx = particle.x - cylinder.x_1
-  x_2_1 = cylinder.x_2 - cylinder.x_1
-  x_2_1² = x_2_1 ⋅ x_2_1
-  Δx_⊥ = Δx - (Δx ⋅ x_2_1) / x_2_1² * x_2_1
-  v_⊥  = particle.v - (particle.v ⋅ x_2_1) / x_2_1² * x_2_1
+  Δx_⊥ = Δx - (Δx ⋅ cylinder.axis) * cylinder.axis
+  v_⊥  = particle.v - (particle.v ⋅ cylinder.axis) * cylinder.axis
   Δx_⊥², v_⊥² = Δx_⊥ ⋅ Δx_⊥, v_⊥ ⋅ v_⊥
   b = v_⊥ ⋅ Δx_⊥
-  d = b^2 - v_⊥² * (Δx_⊥² - cylinder.r^2)
+  d = b^2 - v_⊥² * (Δx_⊥² - cylinder.r²)
   
-  if b > 0 || d < 0 || Δx_⊥² < cylinder.r^2 || iszero(v_⊥²) return nothing end
+  if b > 0 || d < 0 || Δx_⊥² < cylinder.r² || iszero(v_⊥²) return nothing end
   
   time_to_collision = (-b - √d) / v_⊥²
   x_at_collision  = particle.x + particle.v * time_to_collision
   Δx_at_collision = x_at_collision - cylinder.x_1
   
-  if !(0 < Δx_at_collision ⋅ x_2_1 < x_2_1²) return nothing end
+  if !(0 < Δx_at_collision ⋅ cylinder.axis < cylinder.l) return nothing end
 
-  Δx_⊥_at_collision = Δx_at_collision - (Δx_at_collision ⋅ x_2_1) / x_2_1² * x_2_1
-  v_after_collision = particle.v - 2 * Δx_⊥_at_collision * (particle.v ⋅ Δx_⊥_at_collision) / cylinder.r^2
+  Δx_⊥_at_collision = Δx_at_collision - (Δx_at_collision ⋅ cylinder.axis) * cylinder.axis
+  n = Δx_⊥_at_collision / cylinder.r
+
+  v_after_collision = reflect_velocity(particle.v, n, cylinder.α, cylinder.wall_std_v)
   
   return Particle(v_after_collision, x_at_collision, particle.t + time_to_collision)
 end
@@ -158,83 +239,63 @@ function collide_with_body(particle::Particle, compound_body::CompoundBody)
 end
 
 
-# """
-#     CompoundBodyDynamic <: Body
-#     CompoundBodyDynamic(bodies::Array{Body, 1})
-
-# A compound body whose components are stored in the array `bodies`. A collision with a `CompoundBodyDynamic` is defined as the earliest collision with any of its components.
-
-# This representation might be preferable if the number of component bodies is very large, however the default choice should be tuple-based `CompoundBody`. Performance differences between `CompoundBodyDynamic` and `CompoundBody` should be evaluated on a case-by-case basis.
-# """
-# struct CompoundBodyDynamic <: Body
-#   bodies::Array{Body, 1}
-# end
-
-# function collide_with_body(particle::Particle, compound_body::CompoundBodyDynamic)
-#   nearest_collision_particle = nothing
-#   for body in compound_body.bodies
-#     collided_particle = collide_with_body(particle, body)
-#     nearest_collision_particle = earlier(nearest_collision_particle, collided_particle)
-#   end
-#   return nearest_collision_particle
-# end
-
-
 """
     IsotropicHelicoidRods <: Body
-    IsotropicHelicoidRods(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
+    IsotropicHelicoidRods(cube_side_length, r; α = zero(r), wall_std_v = one(r))
 
 Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length + 2r`, centered at ``(0, 0, 0)``. This cube side length indirectly defines the length of each rod.
 
+Gas particles reflect from the helicoid via the Maxwell reflection law with diffuse fraction `α` and wall thermal velocity scale `wall_std_v`.
+
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
 """
-struct IsotropicHelicoidRods{T_L <: Real, T_r <: Real, T_el <: CompoundBody} <: Body
-  cube_side_length::T_L
-  r::T_r
+struct IsotropicHelicoidRods{T <: Real, T_el <: CompoundBody} <: Body
+  cube_side_length::T
+  r::T
   elements::T_el
 end
 
 
-function IsotropicHelicoidRods(cube_side_length::T_L, r::T_r) where {T_L <: Real, T_r <: Real}
+function IsotropicHelicoidRods(cube_side_length, r; α = zero(r), wall_std_v = one(r))
   L = cube_side_length / 6
   return IsotropicHelicoidRods(cube_side_length, r,
     CompoundBody(
       CompoundBody(
-        CylinderSideWall(SA[ 1,  2,  3] * L,            SA[ 2,  1, -3] * L, r),
-                  Sphere(SA[ 1,  2,  3] * L, r), Sphere(SA[ 2,  1, -3] * L, r)),
+        CylinderSideWall(SA[ 1,  2,  3] * L,                           SA[ 2,  1, -3] * L, r; α, wall_std_v),
+                  Sphere(SA[ 1,  2,  3] * L, r; α, wall_std_v), Sphere(SA[ 2,  1, -3] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[-2,  1,  3] * L, SA[-1,  2, -3] * L, r),
-                  Sphere(SA[-2,  1,  3] * L, r), Sphere(SA[-1,  2, -3] * L, r)),
+        CylinderSideWall(SA[-2,  1,  3] * L,                           SA[-1,  2, -3] * L, r; α, wall_std_v),
+                  Sphere(SA[-2,  1,  3] * L, r; α, wall_std_v), Sphere(SA[-1,  2, -3] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[-1, -2,  3] * L,            SA[-2, -1, -3] * L, r),
-                  Sphere(SA[-1, -2,  3] * L, r), Sphere(SA[-2, -1, -3] * L, r)),
+        CylinderSideWall(SA[-1, -2,  3] * L,                           SA[-2, -1, -3] * L, r; α, wall_std_v),
+                  Sphere(SA[-1, -2,  3] * L, r; α, wall_std_v), Sphere(SA[-2, -1, -3] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 2, -1,  3] * L,            SA[ 1, -2, -3] * L, r),
-                  Sphere(SA[ 2, -1,  3] * L, r), Sphere(SA[ 1, -2, -3] * L, r)),
+        CylinderSideWall(SA[ 2, -1,  3] * L,                           SA[ 1, -2, -3] * L, r; α, wall_std_v),
+                  Sphere(SA[ 2, -1,  3] * L, r; α, wall_std_v), Sphere(SA[ 1, -2, -3] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 2,  3,  1] * L,            SA[ 1, -3,  2] * L, r),
-                  Sphere(SA[ 2,  3,  1] * L, r), Sphere(SA[ 1, -3,  2] * L, r)),
+        CylinderSideWall(SA[ 2,  3,  1] * L,                           SA[ 1, -3,  2] * L, r; α, wall_std_v),
+                  Sphere(SA[ 2,  3,  1] * L, r; α, wall_std_v), Sphere(SA[ 1, -3,  2] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[-1,  3,  2] * L,            SA[-2, -3,  1] * L, r),
-                  Sphere(SA[-1,  3,  2] * L, r), Sphere(SA[-2, -3,  1] * L, r)),
+        CylinderSideWall(SA[-1,  3,  2] * L,                           SA[-2, -3,  1] * L, r; α, wall_std_v),
+                  Sphere(SA[-1,  3,  2] * L, r; α, wall_std_v), Sphere(SA[-2, -3,  1] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 1,  3, -2] * L,            SA[ 2, -3, -1] * L, r),
-                  Sphere(SA[ 1,  3, -2] * L, r), Sphere(SA[ 2, -3, -1] * L, r)),
+        CylinderSideWall(SA[ 1,  3, -2] * L,                           SA[ 2, -3, -1] * L, r; α, wall_std_v),
+                  Sphere(SA[ 1,  3, -2] * L, r; α, wall_std_v), Sphere(SA[ 2, -3, -1] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[-2,  3, -1] * L,            SA[-1, -3, -2] * L, r),
-                  Sphere(SA[-2,  3, -1] * L, r), Sphere(SA[-1, -3, -2] * L, r)),
+        CylinderSideWall(SA[-2,  3, -1] * L,                           SA[-1, -3, -2] * L, r; α, wall_std_v),
+                  Sphere(SA[-2,  3, -1] * L, r; α, wall_std_v), Sphere(SA[-1, -3, -2] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 3,  1,  2] * L,            SA[-3,  2,  1] * L, r),
-                  Sphere(SA[ 3,  1,  2] * L, r), Sphere(SA[-3,  2,  1] * L, r)),
+        CylinderSideWall(SA[ 3,  1,  2] * L,                           SA[-3,  2,  1] * L, r; α, wall_std_v),
+                  Sphere(SA[ 3,  1,  2] * L, r; α, wall_std_v), Sphere(SA[-3,  2,  1] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 3, -2,  1] * L,            SA[-3, -1,  2] * L, r),
-                  Sphere(SA[ 3, -2,  1] * L, r), Sphere(SA[-3, -1,  2] * L, r)),
+        CylinderSideWall(SA[ 3, -2,  1] * L,                           SA[-3, -1,  2] * L, r; α, wall_std_v),
+                  Sphere(SA[ 3, -2,  1] * L, r; α, wall_std_v), Sphere(SA[-3, -1,  2] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 3, -1, -2] * L,            SA[-3, -2, -1] * L, r),
-                  Sphere(SA[ 3, -1, -2] * L, r), Sphere(SA[-3, -2, -1] * L, r)),
+        CylinderSideWall(SA[ 3, -1, -2] * L,                           SA[-3, -2, -1] * L, r; α, wall_std_v),
+                  Sphere(SA[ 3, -1, -2] * L, r; α, wall_std_v), Sphere(SA[-3, -2, -1] * L, r; α, wall_std_v)),
       CompoundBody(
-        CylinderSideWall(SA[ 3,  2, -1] * L,            SA[-3,  1, -2] * L, r),
-                  Sphere(SA[ 3,  2, -1] * L, r), Sphere(SA[-3,  1, -2] * L, r)),
+        CylinderSideWall(SA[ 3,  2, -1] * L,                           SA[-3,  1, -2] * L, r; α, wall_std_v),
+                  Sphere(SA[ 3,  2, -1] * L, r; α, wall_std_v), Sphere(SA[-3,  1, -2] * L, r; α, wall_std_v)),
     )
   )
 end
@@ -264,7 +325,7 @@ function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
   a = SA[randn(T), randn(T), randn(T)]
   b = normalize(a .- (a ⋅ e_v) * e_v)
   x = -e_v * domain_radius .+ b * √rand(T) * domain_radius
-  return Particle(v, x, zero(T))
+  return Particle(v, x, zero(eltype(v)))
 end
 
 
@@ -303,11 +364,6 @@ end
 tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} =
   @SArray [A[i,j] * B[k,l] for i in 1:3, j in 1:3, k in 1:3, l in 1:3]
 
-# tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} = begin
-#   a = SVector{9, T}(Tuple(A))
-#   b = SVector{9, T}(Tuple(B))
-#   SArray{Tuple{3, 3, 3, 3}, T, 4, 81}(Tuple(a * transpose(b)))
-# end
 
 """
     force_and_torque_uniform_flow(;
@@ -361,10 +417,9 @@ force_and_torque_uniform_flow(
     max_collisions = 1,
     sample_size    = 10^7)
 ```
-
 """
 function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
-  T = eltype(mean_v)
+  T = promote_type(eltype(mean_v), eltype(torque_point), typeof(std_v), typeof(domain_radius))
   
   F_sums     = [zero(SVector{3, T}) for _ in 1:nthreads()]
   M_sums     = [zero(SVector{3, T}) for _ in 1:nthreads()]

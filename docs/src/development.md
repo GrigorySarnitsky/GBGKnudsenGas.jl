@@ -219,10 +219,6 @@ collide_with_body(particle::Particle, elipsoid::Ellipsoid)::Union{Nothing, Parti
 
 The existing implementation for `Sphere` can be used for reference.
 
-### Non-specular collisions
-
-As for non-specular collisions, I envision the following architecture. Each body type is extended with the property `collision_type`, which tells how the particles interact with the body. Then the function `collide_with_body` should have a branching that chooses the correct collision law based on the body's `collision_type`.
-
 ### Rotating bodies
 
 Rotating bodies, in the limit of small rotational speed, can be added similarly to non-specular collisions. That's because to first order the body rotation merely modifies the collision law.
