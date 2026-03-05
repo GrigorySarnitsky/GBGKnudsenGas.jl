@@ -420,22 +420,24 @@ force_and_torque_uniform_flow(
 """
 function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
   T = promote_type(eltype(mean_v), eltype(torque_point), typeof(std_v), typeof(domain_radius))
-  
-  F_sums     = [zero(SVector{3, T}) for _ in 1:nthreads()]
-  M_sums     = [zero(SVector{3, T}) for _ in 1:nthreads()]
-  
-  dF_v_sums  = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
-  dM_v_sums  = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
 
-  F²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
-  M²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:nthreads()]
-
-  dF_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
-  dM_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:nthreads()]
+  number_of_thread_slots = Threads.maxthreadid() # overprovides, usually 2x actual number of threads
   
-  missed_sums  = zeros(Int, nthreads())
+  F_sums     = [zero(SVector{3, T}) for _ in 1:number_of_thread_slots]
+  M_sums     = [zero(SVector{3, T}) for _ in 1:number_of_thread_slots]
+  
+  dF_v_sums  = [zero(SMatrix{3, 3, T, 9}) for _ in 1:number_of_thread_slots]
+  dM_v_sums  = [zero(SMatrix{3, 3, T, 9}) for _ in 1:number_of_thread_slots]
 
-  @threads for i in 1:sample_size
+  F²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:number_of_thread_slots]
+  M²_sums = [zero(SMatrix{3, 3, T, 9}) for _ in 1:number_of_thread_slots]
+
+  dF_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:number_of_thread_slots]
+  dM_v²_sums = [zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81}) for _ in 1:number_of_thread_slots]
+  
+  missed_sums  = zeros(Int, number_of_thread_slots)
+
+  @threads :static for i in 1:sample_size
     p_b, p_a, missed = find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
     tid = threadid()
 
