@@ -4,7 +4,7 @@ We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to b
 
 ## Epstein drag
 
-Consider stationary flow of a Knudsen gas past a sphere with specular collisions. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+Consider stationary flow of a Knudsen gas past a sphere with the collisions following the [Maxwell law.](https://doi.org/10.1146/annurev-fluid-121021-014808) The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
 f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
@@ -24,12 +24,26 @@ For a monatomic gas $\gamma = 5/3$. The Mach number $\text{Ma}$ is
 ```math
 \text{Ma} = \frac{\| \langle \boldsymbol v_0 \rangle \|}{c} = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v \sqrt \gamma}.
 ```
+The Maxwell reflection law is charecterized by the diffuse fraction $\alpha$ and wall thermal velocity scale $\sigma_{v_\text{wall}}$, so that one can model
+- purely specular reflections ($\alpha = 0$),
+- purely diffuse reflections ($\alpha = 1$),
+- Bernoulli mixture of specular and diffuse reflections ($0 < \alpha < 1$).
+
+A gas particle that reflects diffusely has an outgoing velocity $\boldsymbol v$ distributed according to the following probability density function, where $\boldsymbol n$ denotes the outward wall normal:
+
+```math
+f_\text{diff}(\boldsymbol v) = \left\{
+\begin{aligned}
+  &\frac{\boldsymbol v \cdot \boldsymbol n}{2 \pi \sigma_{v_\text{wall}}^4} \exp \biggl(- \frac{\boldsymbol v \cdot \boldsymbol v}{2 \sigma_{v_\text{wall}}^2} \biggr) && \text{if\ }\boldsymbol v \cdot \boldsymbol n > 0,\\
+  & 0 && \text{otherwise.}
+\end{aligned}\right.
+```
 
 Let $\boldsymbol F$ be the force that the flowing gas exerts on the sphere and $r$ be the radius of the sphere. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$ is
 
 ```math
 \boldsymbol F_\text{Epstein (1924)}
-= \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,
+= \biggl(1 + \frac{\pi}{8} \alpha \frac{\sigma_{v_\text{wall}}}{\sigma_v} \biggr) \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,
 ```
 
 see the papers
@@ -40,15 +54,16 @@ see the papers
 For arbitrary Mach numbers, the exact formula for $\boldsymbol F$ was derived by Baines et al. (1965):
 
 ```math
-\boldsymbol F_\text{Baines et al. (1965)}
-= \frac{3}{8} \psi \biggl[\biggl(\frac{1}{\psi} + \frac{1}{2 \psi^3} \biggr) + \biggl(1 + \frac{1}{\psi^2} - \frac{1}{4 \psi^4} \biggr) \sqrt \pi \biggr] \boldsymbol F_\text{Epstein (1924)},
-\qquad \psi = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sqrt 2 \sigma_v}.
+\begin{aligned}
+\boldsymbol F_\text{Baines et al. (1965)} &=
+\frac{\boldsymbol F_\text{Epstein (1924)}}{1 + \frac{\pi}{8} \alpha \frac{\sigma_{v_\text{wall}}}{\sigma_v}} \\
+\times \biggl\{ \frac{3}{8} \psi \biggl[\biggl( & \frac{1}{\psi} + \frac{1}{2 \psi^3} \biggr) \exp(- \psi^2) + \biggl(1 + \frac{1}{\psi^2} - \frac{1}{4 \psi^4} \biggr) \sqrt \pi \operatorname{erf}{\psi} \biggr] + \frac{\pi}{8} \alpha \frac{\sigma_{v_\text{wall}}}{\sigma_v} \biggr\},
+\end{aligned}
 ```
-
-see the original paper
+with $\psi = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sqrt 2 \sigma_v}$, see the original paper
 * Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
-Later, a good approximation for $F_\text{drag}$ was given by Kwok (1975):
+Later, a good approximation for $F_\text{drag}$ was given by Kwok (1975), for specular collisions:
 
 ```math
 \boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},
@@ -61,7 +76,7 @@ see the papers
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-The full code of this computation is available in `examples/epstein_drag.jl`. That's a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For a more advance code for simulating the same flow see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md)
+The full code of this computation is available in `examples/epstein_drag.jl`. That's a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For a more advance code for simulating the same flow see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md) For simplicity, below we study only specular collisions, $\alpha = 0$.
 
 ### Computing $\boldsymbol F$
 
@@ -85,7 +100,7 @@ Recall from the [introduction,](index.md) that
 \boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>.
 ```
 
-The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using `sample_particle_state_uniform_flow`. Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
+The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using [`sample_particle_state_uniform_flow`](@ref). Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
 
 ```math
 \boldsymbol F = - \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigm| \text{hit} \bigr> .
@@ -119,26 +134,24 @@ function find_single_collision(body, mean_v, std_v, domain_radius)
 end
 ```
 
-Next, we present the function `force_MC`, which computes $\boldsymbol F$. In addition to the arguments accepted by `sample_particle_state_uniform_flow`, it accepts `sample_size`, the number of particles that actually collide with the body and thus determine the accuracy of the Monte Carlo estimator. The code is multithreaded to take advantage of multi-core CPUs:
+Next, we present the function `force_MC`, which computes $\boldsymbol F$. In addition to the arguments accepted by `sample_particle_state_uniform_flow`, it accepts `sample_size`, the number of particles that actually collide with the body and thus determine the accuracy of the Monte Carlo estimator:
 
 ```julia
 using LinearAlgebra
-using Base.Threads
 
 function force_MC(body, mean_v, std_v, domain_radius, sample_size)
   T = eltype(mean_v)
-  F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
-  missed_sums = zeros(Int, nthreads())
+  F_sum = SVector{3, T}(0, 0, 0)
+  missed_sum = zero(Int)
 
-  @threads for i in 1:sample_size
+  for i in 1:sample_size
     p_b, p_a, missed = find_single_collision(body, mean_v, std_v, domain_radius)
-    tid = threadid()
-    F_sums[tid]      += norm(p_b.v) * (p_a.v - p_b.v)
-    missed_sums[tid] += missed
+    F_sum += norm(p_b.v) * (p_a.v - p_b.v)
+    missed_sum += missed
   end
 
-  collision_probability = sample_size / (sample_size + sum(missed_sums))
-  force = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
+  collision_probability = sample_size / (sample_size + missed_sum)
+  force = - F_sum / sample_size * collision_probability * π * domain_radius^2
 
   return force
 end
@@ -151,7 +164,13 @@ using SpecialFunctions
 using Plots
 using LaTeXStrings
 
-default(;fontfamily = "Computer Modern")
+pgfplotsx()
+
+for command in ["\\usepackage{amsmath}"]
+  if command ∉ PGFPlotsX.CUSTOM_PREAMBLE
+    push!(PGFPlotsX.CUSTOM_PREAMBLE, command)
+  end
+end
 
 epstein_sphere = Sphere(SA[0.0, 0.0, 0.0], 1.0)
 
@@ -159,7 +178,7 @@ const σ_v   = 1.0
 const r_dom = 2.0
 
 mean_v_values = [SA[mean_v, 0.0, 0.0] for mean_v in range(0.0, 3.0, 20)]
-force_MC_values = @time force_MC.(Ref(epstein_sphere), mean_v_values, σ_v, r_dom, 10^6)
+force_MC_values = force_MC.(Ref(epstein_sphere), mean_v_values, σ_v, r_dom, 10^6)
 
 force_Epstein(mean_v, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v
 
@@ -182,14 +201,14 @@ plot(
     normalize_force.(force_MC_values)
   ],
   label = ["Epstein (1924)" "Baines et al. (1965)" "Kwok (1975)" "GBGKnudsenGas.jl"], legend = :topleft,
-  color = [:black 1 2 :black], linestyle = [:solid :solid :dash :dashdot],
-  ylabel = L"‖\! 𝑭\ ‖ / (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
-  xlabel = L"‖ \langle 𝒗_0 \rangle ‖ / σ_v", xticks = 0:0.5:3
+  color = [:black 1 2 :black], linestyle = [:solid :solid :dash :dash],
+  ylabel = L"\| \boldsymbol{F} \| \bigm/ (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
+  xlabel = L"\| \langle \boldsymbol v_0 \rangle \| / \sigma_v", xticks = 0:0.5:3
 )
 
 display(plot!())
 
-savefig("Epstein_force.svg")
+savefig("Epstein_drag.svg")
 ```
 
 ![Epstein drag plot](Epstein_drag.svg)
@@ -219,7 +238,7 @@ To compute $\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$
 ```julia
 using ForwardDiff
 
-force_linear_response_MC = @time ForwardDiff.jacobian(mean_v -> force_MC(epstein_sphere, mean_v, σ_v, r_dom, 10^7), SA[0.0, 0.0, 0.0])
+force_linear_response_MC = ForwardDiff.jacobian(mean_v -> force_MC(epstein_sphere, mean_v, σ_v, r_dom, 10^7), SA[0.0, 0.0, 0.0])
 
 epstein_coefficient = 8/3 * √(2 * π) * σ_v * epstein_sphere.r^2
 

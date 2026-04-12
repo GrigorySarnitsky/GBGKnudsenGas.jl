@@ -1,14 +1,18 @@
-using LinearAlgebra
 using StaticArrays
-using SpecialFunctions
-using ForwardDiff
 using GBGKnudsenGas
+using LinearAlgebra
+using SpecialFunctions
 using Plots
 using LaTeXStrings
-using Base.Threads
+using ForwardDiff
 
-default(;fontfamily = "Computer Modern")
+pgfplotsx()
 
+for command in ["\\usepackage{amsmath}"]
+  if command ∉ PGFPlotsX.CUSTOM_PREAMBLE
+    push!(PGFPlotsX.CUSTOM_PREAMBLE, command)
+  end
+end
 
 function find_single_collision(body, mean_v, std_v, domain_radius)
   missed_particles_number = 0
@@ -28,18 +32,17 @@ end
 
 function force_MC(body, mean_v, std_v, domain_radius, sample_size)
   T = eltype(mean_v)
-  F_sums      = [SVector{3, T}(0, 0, 0) for _ in 1:nthreads()]
-  missed_sums = zeros(Int, nthreads())
+  F_sum = SVector{3, T}(0, 0, 0)
+  missed_sum = zero(Int)
 
-  @threads for i in 1:sample_size
+  for i in 1:sample_size
     p_b, p_a, missed = find_single_collision(body, mean_v, std_v, domain_radius)
-    tid = threadid()
-    F_sums[tid]      += norm(p_b.v) * (p_a.v - p_b.v)
-    missed_sums[tid] += missed
+    F_sum += norm(p_b.v) * (p_a.v - p_b.v)
+    missed_sum += missed
   end
 
-  collision_probability = sample_size / (sample_size + sum(missed_sums))
-  force = - sum(F_sums) / sample_size * collision_probability * π * domain_radius^2
+  collision_probability = sample_size / (sample_size + missed_sum)
+  force = - F_sum / sample_size * collision_probability * π * domain_radius^2
 
   return force
 end
@@ -51,7 +54,7 @@ const σ_v   = 1.0
 const r_dom = 2.0
 
 mean_v_values = [SA[mean_v, 0.0, 0.0] for mean_v in range(0.0, 3.0, 20)]
-force_MC_values = @time force_MC.(Ref(epstein_sphere), mean_v_values, σ_v, r_dom, 10^6)
+force_MC_values = force_MC.(Ref(epstein_sphere), mean_v_values, σ_v, r_dom, 10^6)
 
 force_Epstein(mean_v, std_v) = 8/3 * √(2 * π) * std_v * epstein_sphere.r^2 * mean_v
 
@@ -74,16 +77,17 @@ plot(
     normalize_force.(force_MC_values)
   ],
   label = ["Epstein (1924)" "Baines et al. (1965)" "Kwok (1975)" "GBGKnudsenGas.jl"], legend = :topleft,
-  color = [:black 1 2 :black], linestyle = [:solid :solid :dash :dashdot],
-  ylabel = L"‖\! 𝑭\ ‖ / (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
-  xlabel = L"‖ \langle 𝒗_0 \rangle ‖ / σ_v", xticks = 0:0.5:3
+  color = [:black 1 2 :black], linestyle = [:solid :solid :dash :dash],
+  ylabel = L"\| \boldsymbol{F} \| \bigm/ (\frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2)",
+  xlabel = L"\| \langle \boldsymbol v_0 \rangle \| / \sigma_v", xticks = 0:0.5:3
 )
 
 display(plot!())
 
-savefig("Epstein_force.svg")
+savefig("Epstein_drag.svg")
 
-force_linear_response_MC = @time ForwardDiff.jacobian(mean_v -> force_MC(epstein_sphere, mean_v, σ_v, r_dom, 10^7), SA[0.0, 0.0, 0.0])
+
+force_linear_response_MC = ForwardDiff.jacobian(mean_v -> force_MC(epstein_sphere, mean_v, σ_v, r_dom, 10^7), SA[0.0, 0.0, 0.0])
 
 epstein_coefficient = 8/3 * √(2 * π) * σ_v * epstein_sphere.r^2
 
