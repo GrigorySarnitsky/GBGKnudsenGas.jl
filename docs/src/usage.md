@@ -1,6 +1,8 @@
 # Using GBGKnudsenGas.jl
 
-At its core, the package provides functionality to calculate collisions between a single gas particle and a given body. Users are expected to build their own ensembles to model the flow of interest. First, we describe how to use `GBGKnudsenGas.jl` to calculate the dynamics of a single particle; then we demonstrate how to compute ensemble averages for the special case of a uniform gas flow in thermal equilibrium. Finally, there is a [dedicated page](Epstein_drag.md) illustrating how to build your own flow setup using Epstein drag calculation as an example.
+At its core, the package provides functionality to calculate collisions between a single gas particle and a given body. Users are expected to build their own ensembles to model the flow of interest, yet there is a built-in limited infrastructure for modeling stationary gas flows in thermal equilibrium. Consult the [API reference](api.md) for the full capabilities of the package.
+
+Below, we describe how to use `GBGKnudsenGas.jl` to calculate the dynamics of a single particle; then we demonstrate how to compute ensemble averages for the special case of a uniform gas flow in thermal equilibrium. Finally, there is a [dedicated page](Epstein_drag.md) illustrating how to build your own flow setup using Epstein drag calculation as an example. 
 
 
 ## Single particle dynamics
@@ -13,7 +15,7 @@ The state of a gas particle is represented by the type `Particle` with a constru
 Particle(v::SVector{3, T}, x::SVector{3, T}, t::T) where {T <: Real}
 ```
 
-where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t` Note that we use `StaticArrays.jl` to represent the vectors `v` and `x`. For example, let's create a particle `p` that at time $t = 0$ has velocity $(1, 0, 0)$ and position $(-10, 0, 0)$:
+where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t` Note that we use [`StaticArrays.jl`](https://github.com/JuliaArrays/StaticArrays.jl) to represent the vectors `v` and `x`. For example, let's create a particle `p` that at time $t = 0$ has velocity $(1, 0, 0)$ and position $(-10, 0, 0)$:
 
 ```julia
 using StaticArrays
@@ -25,10 +27,27 @@ p = Particle(SA[1.0, 0.0, 0.0], SA[-10.0, 0.0, 0.0], 0.0)
 Next, bodies immersed in the Knudsen gas are represented by an abstract supertype `Body`. A concrete example is `Sphere`, which represents a sphere centered at point `x` of radius `r`:
 
 ```julia
-Sphere(x::SVector{3, T_x}, r::T_r) where {T_x <: Real, T_r <: Real}
+Sphere(x::SVector{3}, r; α = zero(r), wall_std_v = one(r))
 ```
 
-For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`. For now, let's make a sphere `s` of radius $1$ and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
+Parameters `α` and `wall_std_v` are the diffuse fraction $\alpha$ and wall thermal velocity scale $\sigma_{v_\text{wall}}$ of the [Maxwell reflection law,](https://doi.org/10.1146/annurev-fluid-121021-014808) so that one can model
+- purely specular reflections ($\alpha = 0$),
+- purely diffuse reflections ($\alpha = 1$),
+- Bernoulli mixture of specular and diffuse reflections ($0 < \alpha < 1$).
+
+A gas particle that reflects diffusely has an outgoing velocity $\boldsymbol v$ distributed according to the following probability density function, where $\boldsymbol n$ denotes the outward wall normal:
+
+```math
+f_\text{diff}(\boldsymbol v) = \left\{
+\begin{aligned}
+  &\frac{\boldsymbol v \cdot \boldsymbol n}{2 \pi \sigma_{v_\text{wall}}^4} \exp \biggl(- \frac{\boldsymbol v \cdot \boldsymbol v}{2 \sigma_{v_\text{wall}}^2} \biggr) && \text{if\ }\boldsymbol v \cdot \boldsymbol n > 0,\\
+  & 0 && \text{otherwise.}
+\end{aligned}\right.
+```
+
+For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`; while the parameters of the Maxwell reflection law as `s.α` and `s.wall_std_v`.
+
+For now, let's make a sphere `s` of radius $1$ with specular collisions and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
 
 ```julia
 s = Sphere(SA[0.0, 0.0, 0.0], 1.0)
@@ -54,7 +73,7 @@ Apart from spheres, `GBGKnudsenGas.jl` also provides `CylinderSideWall`, which r
 
 ## Simulating stationary flow of a gas in thermal equilibrium past a body
 
-Consider stationary flow of a Knudsen gas past a body with specular collisions. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+Consider stationary flow of a Knudsen gas past a body. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
 f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
@@ -103,7 +122,7 @@ Finally, `GBGKnudsenGas.jl` can directly compute the kinematic force $\boldsymbo
 \frac{\partial f}{\partial \langle \boldsymbol v_0 \rangle} = \frac{\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle}{\sigma_v^2} f,
 ```
 
-leading, for example, to the following formula for the Jacobian of force:
+leading, for example, to the following formula for computing the Jacobian of force:
 
 ```math
 \frac{\partial \boldsymbol F}{\partial \langle \boldsymbol v_0 \rangle} = - \frac{\rho  \pi r_\text{dom}^2}{\sigma_v^2} \bigl< \| \boldsymbol v_0 \| \, \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \otimes (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \bigr>.
