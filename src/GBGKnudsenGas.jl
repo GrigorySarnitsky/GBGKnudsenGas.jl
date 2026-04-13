@@ -493,6 +493,9 @@ Notes:
 # Example
 
 ```julia
+using StaticArrays
+using GBGKnudsenGas
+
 force_and_torque_uniform_flow(
   body           = Sphere(SA[0.0, 0.0, 1.0], 0.5),
   torque_point   = SA[0.0, 0.0, 0.0],

@@ -1,10 +1,10 @@
 # Example: Epstein drag calculation
 
-We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to build your own flow setup using Epstein drag calculation as an example. If one is simply interested in calculating the forces and torques acting on a body in a uniform flow of equilibrium Knudsen gas, one should just use [`force_and_torque_uniform_flow`](@ref).
+We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to build your own flow setup taking Epstein drag as an example. If one is simply interested in calculating the forces and torques acting on a body in a uniform flow of an equilibrium Knudsen gas, one should just use [`force_and_torque_uniform_flow`](@ref).
 
 ## Epstein drag
 
-Consider stationary flow of a Knudsen gas past a sphere with the collisions following the [Maxwell law.](https://doi.org/10.1146/annurev-fluid-121021-014808) The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+Consider a stationary flow of a Knudsen gas past a sphere with collisions following the [Maxwell reflection law.](https://doi.org/10.1146/annurev-fluid-121021-014808) The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
 f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
@@ -24,7 +24,7 @@ For a monatomic gas $\gamma = 5/3$. The Mach number $\text{Ma}$ is
 ```math
 \text{Ma} = \frac{\| \langle \boldsymbol v_0 \rangle \|}{c} = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v \sqrt \gamma}.
 ```
-The Maxwell reflection law is charecterized by the diffuse fraction $\alpha$ and wall thermal velocity scale $\sigma_{v_\text{wall}}$, so that one can model
+The Maxwell reflection law is characterized by the diffuse fraction $\alpha$ and wall thermal velocity scale $\sigma_{v_\text{wall}}$, so that one can model
 - purely specular reflections ($\alpha = 0$),
 - purely diffuse reflections ($\alpha = 1$),
 - Bernoulli mixture of specular and diffuse reflections ($0 < \alpha < 1$).
@@ -76,7 +76,7 @@ see the papers
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-The full code of this computation is available in `examples/epstein_drag.jl`. That's a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For a more advance code for simulating the same flow see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md) For simplicity, below we study only specular collisions, $\alpha = 0$.
+The full code of this computation is available in `examples/epstein_drag.jl`. This is a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For more advanced code for simulating the same flow, see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md) For simplicity, below we study only specular collisions, $\alpha = 0$.
 
 ### Computing $\boldsymbol F$
 
@@ -97,8 +97,10 @@ The calculation of $\boldsymbol F$ is based on the statistics of the velocity in
 Recall from the [introduction,](index.md) that
 
 ```math
-\boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>.
+\boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>,
 ```
+
+with $r_\text{dom}$ being the radius of the domain that fully encloses the sphere.
 
 The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using [`sample_particle_state_uniform_flow`](@ref). Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
 
@@ -213,9 +215,9 @@ savefig("Epstein_drag.svg")
 
 ![Epstein drag plot](Epstein_drag.svg)
 
-As we see, `GBGKnudsenGas.jl` reproduces the exact formula of Baines et al. (1965) with excellent accuracy.
+As we can see, `GBGKnudsenGas.jl` reproduces the exact formula of Baines et al. (1965) with excellent accuracy.
 
-### Computing force linear response tensor
+### Computing the linear-response tensor of the force
 
 In the low Mach number regime, $\text{Ma} \ll 1$, the force $\boldsymbol F$ is linear in $\langle \boldsymbol v_0 \rangle$ and is fully described by the linear response tensor $\mathrm d \boldsymbol F / \mathrm d \langle \boldsymbol v_0 \rangle$:
 

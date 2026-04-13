@@ -1,8 +1,8 @@
 # Using GBGKnudsenGas.jl
 
-At its core, the package provides functionality to calculate collisions between a single gas particle and a given body. Users are expected to build their own ensembles to model the flow of interest, yet there is a built-in limited infrastructure for modeling stationary gas flows in thermal equilibrium. Consult the [API reference](api.md) for the full capabilities of the package.
+At its core, the package provides functionality to calculate collisions between a single gas particle and a given body. Users are expected to build their own ensembles to model the flow of interest, yet there is limited built-in infrastructure for modeling stationary gas flows in thermal equilibrium. Consult the [API reference](api.md) for the full capabilities of the package.
 
-Below, we describe how to use `GBGKnudsenGas.jl` to calculate the dynamics of a single particle; then we demonstrate how to compute ensemble averages for the special case of a uniform gas flow in thermal equilibrium. Finally, there is a [dedicated page](Epstein_drag.md) illustrating how to build your own flow setup using Epstein drag calculation as an example. 
+Below, we describe how to use `GBGKnudsenGas.jl` to calculate the dynamics of a single particle; then we demonstrate how to compute ensemble averages for the special case of a uniform gas flow in thermal equilibrium. Finally, there is a [dedicated page](Epstein_drag.md) illustrating how to build your own flow setup using Epstein drag as an example. 
 
 
 ## Single particle dynamics
@@ -15,7 +15,7 @@ The state of a gas particle is represented by the type `Particle` with a constru
 Particle(v::SVector{3, T}, x::SVector{3, T}, t::T) where {T <: Real}
 ```
 
-where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t` Note that we use [`StaticArrays.jl`](https://github.com/JuliaArrays/StaticArrays.jl) to represent the vectors `v` and `x`. For example, let's create a particle `p` that at time $t = 0$ has velocity $(1, 0, 0)$ and position $(-10, 0, 0)$:
+where `v` and `x` are the particle's velocity and position at time `t`. For a given particle `p`, these can be accessed as `p.v`, `p.x`, and `p.t`. Note that we use [`StaticArrays.jl`](https://github.com/JuliaArrays/StaticArrays.jl) to represent the vectors `v` and `x`. For example, let's create a particle `p` that at time $t = 0$ has velocity $(1, 0, 0)$ and position $(-10, 0, 0)$:
 
 ```julia
 using StaticArrays
@@ -45,7 +45,7 @@ f_\text{diff}(\boldsymbol v) = \left\{
 \end{aligned}\right.
 ```
 
-For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`; while the parameters of the Maxwell reflection law as `s.α` and `s.wall_std_v`.
+For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`; while the parameters of the Maxwell reflection law can be accessed as as `s.α` and `s.wall_std_v`.
 
 For now, let's make a sphere `s` of radius $1$ with specular collisions and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
 
@@ -73,7 +73,7 @@ Apart from spheres, `GBGKnudsenGas.jl` also provides `CylinderSideWall`, which r
 
 ## Simulating stationary flow of a gas in thermal equilibrium past a body
 
-Consider stationary flow of a Knudsen gas past a body. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+Consider a stationary flow of a Knudsen gas past a body. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
 f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
@@ -87,7 +87,7 @@ where
 
 and $m$ is the mass of a single particle.
 
-We now describe a procedure for calculating physical quantities associated with the flow of a Knudsen gas past a body. We use the force $\boldsymbol{F}$ that the flowing gas exerts on the body as an archetypical example. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as an integral over in the velocity and physical spaces:
+We now describe a procedure for calculating physical quantities associated with the flow of a Knudsen gas past a body. We use the force $\boldsymbol{F}$ that the flowing gas exerts on the body as an archetypical example. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as an integral over the velocity and physical spaces:
 
 ```math
 \boldsymbol{F} = - \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v_0)} \rho  \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0.
@@ -114,9 +114,9 @@ Given $\langle \boldsymbol v_0 \rangle$ (`mean_v`), $\sigma_v$ (`std_v`) and $r_
 find_colliding_particle_uniform_flow(body, mean_v, std_v, domain_radius)
 ```
 
-that repeatedly samples particles via `sample_particle_state_uniform_flow` until it finds the one that collides with body.
+that repeatedly samples particles via `sample_particle_state_uniform_flow` until it finds one that collides with the body.
 
-Finally, `GBGKnudsenGas.jl` can directly compute the kinematic force $\boldsymbol F / \rho$ and torque $\boldsymbol M / \rho$ about the point that the gas exerts on the immersed body with the function [`force_and_torque_uniform_flow`](@ref). It also computes the Jacobians $\partial (\boldsymbol F / \rho) / \partial \langle \boldsymbol v_0 \rangle$ and $\partial (\boldsymbol M / \rho) / \partial \langle \boldsymbol v_0 \rangle$ with respect ot the mean flow velocity. The Jacobians are computed analytically using the exact gradient of the velocity PDF
+Finally, `GBGKnudsenGas.jl` can directly compute the kinematic force $\boldsymbol F / \rho$ and torque $\boldsymbol M / \rho$ about a given point exerted by the gas on the immersed body with the function [`force_and_torque_uniform_flow`](@ref). It also computes the Jacobians $\partial (\boldsymbol F / \rho) / \partial \langle \boldsymbol v_0 \rangle$ and $\partial (\boldsymbol M / \rho) / \partial \langle \boldsymbol v_0 \rangle$ with respect to the mean flow velocity. The Jacobians are computed analytically using the exact gradient of the velocity PDF
 
 ```math
 \frac{\partial f}{\partial \langle \boldsymbol v_0 \rangle} = \frac{\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle}{\sigma_v^2} f,
@@ -130,7 +130,7 @@ leading, for example, to the following formula for computing the Jacobian of for
 
 ## Complete example: Epstein drag
 
-We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to build your own flow setup using Epstein drag calculation as an example. See the [respective page.](Epstein_drag.md)
+We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to build your own flow setup using Epstein drag as an example. See the [dedicated page.](Epstein_drag.md)
 
 
 ## Extending the package
