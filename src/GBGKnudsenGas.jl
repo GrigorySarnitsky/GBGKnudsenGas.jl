@@ -256,13 +256,14 @@ The element type `B` must be concrete.
 """
 struct HomogeneousCompoundBody{B <: Body} <: Body
   bodies::Vector{B}
-  function HomogeneousCompoundBody{B}(bodies::AbstractVector{B}) where {B <: Body}
+  function HomogeneousCompoundBody{B}(bodies::Vector{B}) where {B <: Body}
     isconcretetype(B) || throw(ArgumentError("HomogeneousCompoundBody requires a concrete body type; got $B."))
-    new{B}(collect(bodies))
+    new{B}(bodies)
   end
 end
 
 
+HomogeneousCompoundBody{B}(bodies::AbstractVector{B}) where {B <: Body} = HomogeneousCompoundBody{B}(collect(bodies))
 HomogeneousCompoundBody(bodies::AbstractVector{B}) where {B <: Body} = HomogeneousCompoundBody{B}(bodies)
 HomogeneousCompoundBody(bodies::Vararg{B}) where {B <: Body} = HomogeneousCompoundBody{B}(collect(bodies))
 
@@ -469,8 +470,8 @@ end
 function force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, T, parallel)
   if parallel
     number_of_threads = Threads.nthreads(:default)
-    # number_of_chunks = number_of_threads
-    number_of_chunks = round(Int, √(number_of_threads * sample_size))
+    #number_of_chunks = number_of_threads
+    number_of_chunks = number_of_threads * round(Int, log(sample_size))
     base_chunk_size, remainder = divrem(sample_size, number_of_chunks)
     
     # parallel_force_and_torque_sums = Array{Any, 1}(undef, number_of_chunks)
