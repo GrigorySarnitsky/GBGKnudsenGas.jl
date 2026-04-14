@@ -6,7 +6,7 @@ Simulate Knudsen flow of particles past a stationary body, where the particle me
 The module provides building blocks to create your own flow setups:
 
 - geometric body primitives (currently [`Sphere`](@ref) and [`CylinderSideWall`](@ref)),
-- composition of bodies via [`CompoundBody`](@ref),
+- composition of bodies via [`CompoundBody`](@ref) or [`HomogeneousCompoundBody`](@ref),
 - single-particle collision queries via [`collide_with_body`](@ref),
 - tools for modelling a gas in thermal equilibrium flowing past a body.
 
@@ -36,7 +36,7 @@ f_\\text{diff}(\\boldsymbol v) = \\left\\{
 """
 module GBGKnudsenGas
 
-export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoidRods, CompoundBody, collide_with_body,
+export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoidRods, CompoundBody, HomogeneousCompoundBody, collide_with_body,
  sample_particle_state_uniform_flow, find_colliding_particle_uniform_flow, force_and_torque_uniform_flow
 
 
@@ -199,9 +199,11 @@ end
 
 """
     CompoundBody <: Body
-    CompoundBody{T <: Tuple{Vararg{<:Body}}}
+    CompoundBody{T}(bodies::T) where {T <: Tuple{Vararg{<:Body}}}
 
 Compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
+
+This representation is well suited to small or moderate-size collections of bodies, especially when the component types are heterogeneous or known at construction time. For large collections of bodies of the same concrete type, [`HomogeneousCompoundBody`](@ref) can be preferable. Performance differences between `CompoundBody` and [`HomogeneousCompoundBody`](@ref) should be evaluated on a case-by-case basis.
 
 Convenience constructors:
 
@@ -234,6 +236,44 @@ end
 
 function collide_with_body(particle::Particle, compound_body::CompoundBody)
   return earliest_collision(particle, compound_body.bodies)
+end
+
+
+"""
+    HomogeneousCompoundBody <: Body
+    HomogeneousCompoundBody{B}(bodies::Vector{B}) where {B <: Body}
+
+Compound body whose components are stored in the vector `bodies` with a single concrete body type `B`. A collision with a `HomogeneousCompoundBody` is defined as the earliest collision with any of its components.
+
+This representation is well suited to large collections of bodies of the same concrete type. Compared with tuple-based [`CompoundBody`](@ref), it avoids very large tuple types and can be preferable for large homogeneous collections. For small or moderate-size collections of bodies, especially when the component types are heterogeneous or known at construction time, [`CompoundBody`](@ref) is usually the default choice. Performance differences between `HomogeneousCompoundBody` and [`CompoundBody`](@ref) should be evaluated on a case-by-case basis.
+
+Convenience constructors:
+
+    HomogeneousCompoundBody(bodies::Vararg{B}) where {B <: Body}
+    HomogeneousCompoundBody(bodies::AbstractVector{B}) where {B <: Body}
+
+The element type `B` must be concrete.
+"""
+struct HomogeneousCompoundBody{B <: Body} <: Body
+  bodies::Vector{B}
+  function HomogeneousCompoundBody{B}(bodies::AbstractVector{B}) where {B <: Body}
+    isconcretetype(B) || throw(ArgumentError("HomogeneousCompoundBody requires a concrete body type; got $B."))
+    new{B}(collect(bodies))
+  end
+end
+
+
+HomogeneousCompoundBody(bodies::AbstractVector{B}) where {B <: Body} = HomogeneousCompoundBody{B}(bodies)
+HomogeneousCompoundBody(bodies::Vararg{B}) where {B <: Body} = HomogeneousCompoundBody{B}(collect(bodies))
+
+
+function collide_with_body(particle::Particle, compound_body::HomogeneousCompoundBody)
+  nearest_collision_particle = nothing
+  for body in compound_body.bodies
+    collided_particle = collide_with_body(particle, body)
+    nearest_collision_particle = earlier(nearest_collision_particle, collided_particle)
+  end
+  return nearest_collision_particle
 end
 
 
@@ -429,10 +469,28 @@ end
 function force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, T, parallel)
   if parallel
     number_of_threads = Threads.nthreads(:default)
-    number_of_chunks = number_of_threads
+    # number_of_chunks = number_of_threads
+    number_of_chunks = round(Int, √(number_of_threads * sample_size))
     base_chunk_size, remainder = divrem(sample_size, number_of_chunks)
     
-    parallel_force_and_torque_sums = Array{Any, 1}(undef, number_of_chunks)
+    # parallel_force_and_torque_sums = Array{Any, 1}(undef, number_of_chunks)
+    parallel_force_and_torque_sums = Vector{
+      NamedTuple{
+        (:F_sum, :M_sum, :dF_v_sum, :dM_v_sum, :F²_sum, :M²_sum, :dF_v²_sum, :dM_v²_sum, :N_hit, :N_miss),
+        Tuple{
+          SVector{3, T},
+          SVector{3, T},
+          SMatrix{3, 3, T, 9},
+          SMatrix{3, 3, T, 9},
+          SMatrix{3, 3, T, 9},
+          SMatrix{3, 3, T, 9},
+          SArray{Tuple{3, 3, 3, 3}, T, 4, 81},
+          SArray{Tuple{3, 3, 3, 3}, T, 4, 81},
+          T,
+          T,
+        },
+      }
+    }(undef, number_of_chunks)
 
     @threads for i in collect(eachindex(parallel_force_and_torque_sums))
       chunk_sample_size = base_chunk_size + (i <= remainder)
@@ -446,7 +504,7 @@ function force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, 
   end
 end
 
-  
+ 
 
 """
     force_and_torque_uniform_flow(;

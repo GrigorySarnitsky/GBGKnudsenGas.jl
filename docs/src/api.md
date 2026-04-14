@@ -16,6 +16,7 @@ Body
 Sphere
 CylinderSideWall
 CompoundBody
+HomogeneousCompoundBody
 IsotropicHelicoidRods
 ```
 
