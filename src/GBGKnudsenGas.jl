@@ -36,7 +36,7 @@ f_\\text{diff}(\\boldsymbol v) = \\left\\{
 """
 module GBGKnudsenGas
 
-export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoidRods, CompoundBody, HomogeneousCompoundBody, collide_with_body,
+export Particle, Body, Sphere, CylinderSideWall, IsotropicHelicoidRods, IsotropicHelicoidRodsFast, CompoundBody, HomogeneousCompoundBody, collide_with_body,
  sample_particle_state_uniform_flow, find_colliding_particle_uniform_flow, force_and_torque_uniform_flow
 
 
@@ -346,6 +346,64 @@ end
 
 
 """
+    IsotropicHelicoidRodsFast <: Body
+    IsotropicHelicoidRodsFast(cube_side_length, r; α = zero(r), wall_std_v = one(r))
+
+Optimized variant of [`IsotropicHelicoidRods`](@ref) representing the same geometric helicoid, but storing the cylindrical rods and spherical caps separately for slightly better performance.
+
+The cylinders and spheres forming the helicoid can be accessed via `helicoid.cylinders` and `helicoid.spheres`, respectively.
+"""
+struct IsotropicHelicoidRodsFast{T <: Real, T_cylinders <: CompoundBody, T_spheres <: CompoundBody} <: Body
+  cube_side_length::T
+  r::T
+  cylinders::T_cylinders
+  spheres::T_spheres
+end
+
+
+function IsotropicHelicoidRodsFast(cube_side_length, r; α = zero(r), wall_std_v = one(r))
+  L = cube_side_length / 6
+  return IsotropicHelicoidRodsFast(cube_side_length, r,
+    CompoundBody((
+      CylinderSideWall(SA[ 1,  2,  3] * L, SA[ 2,  1, -3] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[-2,  1,  3] * L, SA[-1,  2, -3] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[-1, -2,  3] * L, SA[-2, -1, -3] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 2, -1,  3] * L, SA[ 1, -2, -3] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 2,  3,  1] * L, SA[ 1, -3,  2] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[-1,  3,  2] * L, SA[-2, -3,  1] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 1,  3, -2] * L, SA[ 2, -3, -1] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[-2,  3, -1] * L, SA[-1, -3, -2] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 3,  1,  2] * L, SA[-3,  2,  1] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 3, -2,  1] * L, SA[-3, -1,  2] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 3, -1, -2] * L, SA[-3, -2, -1] * L, r; α, wall_std_v),
+      CylinderSideWall(SA[ 3,  2, -1] * L, SA[-3,  1, -2] * L, r; α, wall_std_v),
+    )),
+    CompoundBody((
+      Sphere(SA[ 1,  2,  3] * L, r; α, wall_std_v), Sphere(SA[ 2,  1, -3] * L, r; α, wall_std_v),
+      Sphere(SA[-2,  1,  3] * L, r; α, wall_std_v), Sphere(SA[-1,  2, -3] * L, r; α, wall_std_v),
+      Sphere(SA[-1, -2,  3] * L, r; α, wall_std_v), Sphere(SA[-2, -1, -3] * L, r; α, wall_std_v),
+      Sphere(SA[ 2, -1,  3] * L, r; α, wall_std_v), Sphere(SA[ 1, -2, -3] * L, r; α, wall_std_v),
+      Sphere(SA[ 2,  3,  1] * L, r; α, wall_std_v), Sphere(SA[ 1, -3,  2] * L, r; α, wall_std_v),
+      Sphere(SA[-1,  3,  2] * L, r; α, wall_std_v), Sphere(SA[-2, -3,  1] * L, r; α, wall_std_v),
+      Sphere(SA[ 1,  3, -2] * L, r; α, wall_std_v), Sphere(SA[ 2, -3, -1] * L, r; α, wall_std_v),
+      Sphere(SA[-2,  3, -1] * L, r; α, wall_std_v), Sphere(SA[-1, -3, -2] * L, r; α, wall_std_v),
+      Sphere(SA[ 3,  1,  2] * L, r; α, wall_std_v), Sphere(SA[-3,  2,  1] * L, r; α, wall_std_v),
+      Sphere(SA[ 3, -2,  1] * L, r; α, wall_std_v), Sphere(SA[-3, -1,  2] * L, r; α, wall_std_v),
+      Sphere(SA[ 3, -1, -2] * L, r; α, wall_std_v), Sphere(SA[-3, -2, -1] * L, r; α, wall_std_v),
+      Sphere(SA[ 3,  2, -1] * L, r; α, wall_std_v), Sphere(SA[-3,  1, -2] * L, r; α, wall_std_v),
+    ))
+  )
+end
+
+
+function GBGKnudsenGas.collide_with_body(particle::Particle, helicoid::IsotropicHelicoidRodsFast)
+  p_cylinders = collide_with_body(particle, helicoid.cylinders)
+  p_spheres   = collide_with_body(particle, helicoid.spheres)
+  return earlier(p_cylinders, p_spheres)
+end
+
+
+"""
     sample_particle_state_uniform_flow(mean_v, std_v, domain_radius) -> Particle
 
 Sample an initial particle state for a gas in thermal equilibrium flowing past a body:
@@ -471,7 +529,7 @@ function force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, 
   if parallel
     number_of_threads = Threads.nthreads(:default)
     #number_of_chunks = number_of_threads
-    number_of_chunks = number_of_threads * round(Int, log(sample_size))
+    number_of_chunks = number_of_threads * round(Int, log(3 + sample_size))
     base_chunk_size, remainder = divrem(sample_size, number_of_chunks)
     
     # parallel_force_and_torque_sums = Array{Any, 1}(undef, number_of_chunks)

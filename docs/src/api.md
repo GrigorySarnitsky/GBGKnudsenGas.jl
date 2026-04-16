@@ -18,6 +18,7 @@ CylinderSideWall
 CompoundBody
 HomogeneousCompoundBody
 IsotropicHelicoidRods
+IsotropicHelicoidRodsFast
 ```
 
 ## Functions
