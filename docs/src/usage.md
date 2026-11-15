@@ -30,7 +30,7 @@ Next, bodies immersed in the Knudsen gas are represented by an abstract supertyp
 Sphere(x::SVector{3}, r; α = zero(r), wall_std_v = one(r))
 ```
 
-Parameters `α` and `wall_std_v` are the diffuse fraction $\alpha$ and wall thermal velocity scale $\sigma_{v_\text{wall}}$ of the [Maxwell reflection law,](https://doi.org/10.1146/annurev-fluid-121021-014808) so that one can model
+Parameters `α` and `wall_std_v` are the diffuse fraction $\alpha$ and wall thermal velocity scale $\sigma_{v_\text{wall}}$ of the [Maxwell reflection law,](https://doi.org/10.1098/rstl.1879.0067) so that one can model
 - purely specular reflections ($\alpha = 0$),
 - purely diffuse reflections ($\alpha = 1$),
 - Bernoulli mixture of specular and diffuse reflections ($0 < \alpha < 1$).
@@ -45,7 +45,7 @@ f_\text{diff}(\boldsymbol v) = \left\{
 \end{aligned}\right.
 ```
 
-For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`; while the parameters of the Maxwell reflection law can be accessed as as `s.α` and `s.wall_std_v`.
+For a given sphere `s`, its center and radius can be accessed as `s.x` and `s.r`; while the parameters of the Maxwell reflection law can be accessed as `s.α` and `s.wall_std_v`.
 
 For now, let's make a sphere `s` of radius $1$ with specular collisions and place it at the origin $(0.0, 0.0, 0.0)$ of our Cartesian coordinate system:
 
@@ -63,7 +63,7 @@ Let's collide our particle `p` with the sphere `s`:
 
 ```julia
 julia> collide_with_body(p, s)
-Particle([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
+Particle{Float64}([-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], 9.0)
 ```
 
 As expected, the collision occurs at the surface of the sphere, reverses the first component of the particle’s velocity, and takes 9.0 units of time.
@@ -73,7 +73,7 @@ Apart from spheres, `GBGKnudsenGas.jl` also provides `CylinderSideWall`, which r
 
 ## Simulating stationary flow of a gas in thermal equilibrium past a body
 
-Consider a stationary flow of a Knudsen gas past a body. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+Consider a stationary flow of a Knudsen gas past a body. The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
 f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
@@ -87,7 +87,7 @@ where
 
 and $m$ is the mass of a single particle.
 
-We now describe a procedure for calculating physical quantities associated with the flow of a Knudsen gas past a body. We use the force $\boldsymbol{F}$ that the flowing gas exerts on the body as an archetypical example. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as an integral over the velocity and physical spaces:
+We now describe a procedure for calculating physical quantities associated with the flow of a Knudsen gas past a body. We use the force $\boldsymbol{F}$ that the flowing gas exerts on the body as an archetypical example. Assume the body fits entirely within a spherical domain of radius $r_\text{dom}$ centered at the origin. Let $\boldsymbol v_\infty(\boldsymbol v_0, \boldsymbol x_0)$ be the final velocity of a gas particle that initially had velocity $\boldsymbol v_0$ and position $\boldsymbol x_0$. The particle's velocity increment is $\Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0$. We can express $\boldsymbol{F}$ as an integral over the velocity and physical spaces:
 
 ```math
 \boldsymbol{F} = - \int\limits_{\mathclap{\substack{\text{velocity} \\ \text{space}}}} \biggl[\int\limits_{D(\boldsymbol v_0)} \rho  \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \, \mathrm{d} \boldsymbol x_0 \biggr] f(\boldsymbol v_0) \, \mathrm{d} \boldsymbol v_0.
@@ -97,6 +97,8 @@ For a given $\boldsymbol v_0$, the inner integration is taken over the disk $D(\
 ![integration scheme](integration_scheme.svg)
 
 We evaluate the integral for $\boldsymbol F$ using a Monte Carlo method. We sample particles whose initial velocities $\boldsymbol v_0$ follow the Maxwell–Boltzmann PDF $f(\boldsymbol v_0)$, and whose initial positions are distributed uniformly over the corresponding disk $D(\boldsymbol v_0)$. With thus defined ensemble of initial particle states, $\boldsymbol F$ is approximated as the following ensemble average:
+
+With the ensemble of initial particle states thus defined, $\boldsymbol F$ is approximated as the following ensemble average:
 
 ```math
 \boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>.

@@ -12,7 +12,21 @@ The `GBG` part in the name `GBGKnudsenGas.jl` comes from the city of Göteborg (
 
 ## Installation
 
-This is an unregistered package, so it is not listed in the `General` Julia registry. To install it, run:
+The package is registered in the `General` Julia registry. To install it, run:
+
+```julia
+]add GBGKnudsenGas
+```
+
+or
+
+```julia
+using Pkg
+
+Pkg.add("GBGKnudsenGas")
+```
+
+To install the latest development version directly from the repository, run:
 
 ```julia
 ]add https://github.com/GrigorySarnitsky/GBGKnudsenGas.jl

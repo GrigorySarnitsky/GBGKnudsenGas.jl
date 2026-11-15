@@ -12,7 +12,7 @@ The module provides building blocks to create your own flow setups:
 
 ## Collision model
 
-All particle–body collisions use a [Maxwell reflection law](https://doi.org/10.1146/annurev-fluid-121021-014808) with diffuse fraction ``\\alpha`` and wall thermal velocity scale ``\\sigma_{v_\\text{wall}}``:
+All particle–body collisions use a [Maxwell reflection law](https://doi.org/10.1098/rstl.1879.0067) with diffuse fraction ``\\alpha`` and wall thermal velocity scale ``\\sigma_{v_\\text{wall}}``:
 
 - ``\\alpha = 0``: purely specular reflection,
 - ``\\alpha = 1``: purely diffuse reflection,
@@ -118,7 +118,7 @@ end
 
 
 function Sphere(x::SVector{3}, r; α = zero(r), wall_std_v = one(r))
-  T = promote_type(eltype(x), typeof(r), typeof(α), typeof(wall_std_v))
+  T = float(promote_type(eltype(x), typeof(r), typeof(α), typeof(wall_std_v)))
   Sphere(SVector{3,T}(x), T(r), T(r)^2, T(α), T(wall_std_v))
 end
 
@@ -165,7 +165,7 @@ end
 
 
 function CylinderSideWall(x_1::SVector{3}, x_2::SVector{3}, r; α = zero(r), wall_std_v = one(r))
-  T = promote_type(eltype(x_1), eltype(x_2), typeof(r), typeof(α), typeof(wall_std_v))
+  T = float(promote_type(eltype(x_1), eltype(x_2), typeof(r), typeof(α), typeof(wall_std_v)))
   axis = normalize(SVector{3,T}(x_2) - SVector{3,T}(x_1))
   l = T(norm(SVector{3,T}(x_2) - SVector{3,T}(x_1)))
   CylinderSideWall(SVector{3,T}(x_1), SVector{3,T}(x_2), T(r), axis, l, T(r)^2, T(α), T(wall_std_v))
@@ -199,7 +199,7 @@ end
 
 """
     CompoundBody <: Body
-    CompoundBody{T}(bodies::T) where {T <: Tuple{Vararg{<:Body}}}
+    CompoundBody{T}(bodies::T) where {T <: Tuple{Vararg{Body}}}
 
 Compound body whose components are stored in the tuple `bodies`. A collision with a `CompoundBody` is defined as the earliest collision with any of its components.
 
@@ -207,15 +207,15 @@ This representation is well suited to small or moderate-size collections of bodi
 
 Convenience constructors:
 
-    CompoundBody(bodies::Vararg{<:Body})
+    CompoundBody(bodies::Body...)
     CompoundBody(bodies::AbstractVector{<:Body})
 """
-struct CompoundBody{T <: Tuple{Vararg{<:Body}}} <: Body
+struct CompoundBody{T <: Tuple{Vararg{Body}}} <: Body
   bodies::T
 end
 
 
-CompoundBody(bodies::Vararg{<:Body}) = CompoundBody(bodies)
+CompoundBody(bodies::Body...) = CompoundBody(bodies)
 CompoundBody(bodies::AbstractVector{<:Body}) = CompoundBody(Tuple(bodies))
 
 
@@ -249,10 +249,10 @@ This representation is well suited to large collections of bodies of the same co
 
 Convenience constructors:
 
-    HomogeneousCompoundBody(bodies::Vararg{B}) where {B <: Body}
+    HomogeneousCompoundBody(body::B, bodies::B...) where {B <: Body}
     HomogeneousCompoundBody(bodies::AbstractVector{B}) where {B <: Body}
 
-The element type `B` must be concrete.
+The element type `B` must be concrete. The vector `bodies` is stored as given, not copied, so later modifications of it change the body.
 """
 struct HomogeneousCompoundBody{B <: Body} <: Body
   bodies::Vector{B}
@@ -265,7 +265,7 @@ end
 
 HomogeneousCompoundBody{B}(bodies::AbstractVector{B}) where {B <: Body} = HomogeneousCompoundBody{B}(collect(bodies))
 HomogeneousCompoundBody(bodies::AbstractVector{B}) where {B <: Body} = HomogeneousCompoundBody{B}(bodies)
-HomogeneousCompoundBody(bodies::Vararg{B}) where {B <: Body} = HomogeneousCompoundBody{B}(collect(bodies))
+HomogeneousCompoundBody(body::B, bodies::B...) where {B <: Body} = HomogeneousCompoundBody{B}([body, bodies...])
 
 
 function collide_with_body(particle::Particle, compound_body::HomogeneousCompoundBody)
@@ -284,6 +284,8 @@ end
 
 Model of Lord Kelvin's isotropic helicoid, constructed from 12 rods. Each rod is a cylinder of radius `r`, capped with two spheres of the same radius. The helicoid is inscribed in a cube of side length `cube_side_length + 2r`, centered at ``(0, 0, 0)``. This cube side length indirectly defines the length of each rod.
 
+![Isotropic helicoid made of 12 rods](helicoid.svg)
+
 Gas particles reflect from the helicoid via the Maxwell reflection law with diffuse fraction `α` and wall thermal velocity scale `wall_std_v`.
 
 The rods that form the helicoid can be accessed via `helicoid.elements`, which is a `CompoundBody`.
@@ -296,6 +298,8 @@ end
 
 
 function IsotropicHelicoidRods(cube_side_length, r; α = zero(r), wall_std_v = one(r))
+  T = float(promote_type(typeof(cube_side_length), typeof(r), typeof(α), typeof(wall_std_v)))
+  cube_side_length, r, α, wall_std_v = T(cube_side_length), T(r), T(α), T(wall_std_v)
   L = cube_side_length / 6
   return IsotropicHelicoidRods(cube_side_length, r,
     CompoundBody(
@@ -362,6 +366,8 @@ end
 
 
 function IsotropicHelicoidRodsFast(cube_side_length, r; α = zero(r), wall_std_v = one(r))
+  T = float(promote_type(typeof(cube_side_length), typeof(r), typeof(α), typeof(wall_std_v)))
+  cube_side_length, r, α, wall_std_v = T(cube_side_length), T(r), T(α), T(wall_std_v)
   L = cube_side_length / 6
   return IsotropicHelicoidRodsFast(cube_side_length, r,
     CompoundBody((
@@ -416,13 +422,13 @@ f(\\boldsymbol v_0) = \\frac{1}{(\\sqrt{2 \\pi \\sigma_v^2})^3} \\exp \\biggl[- 
 * The time `Particle.t` is set to zero.
 """
 function sample_particle_state_uniform_flow(mean_v, std_v, domain_radius)
-  T = eltype(mean_v)
-  v = std_v * SA[randn(T), randn(T), randn(T)] .+ mean_v
+  T = float(promote_type(eltype(mean_v), typeof(std_v), typeof(domain_radius)))
+  v = T(std_v) * SA[randn(T), randn(T), randn(T)] .+ SVector{3, T}(mean_v)
   e_v = normalize(v)
   a = SA[randn(T), randn(T), randn(T)]
   b = normalize(a .- (a ⋅ e_v) * e_v)
-  x = -e_v * domain_radius .+ b * √rand(T) * domain_radius
-  return Particle(v, x, zero(eltype(v)))
+  x = -e_v * T(domain_radius) .+ b * √rand(T) * T(domain_radius)
+  return Particle(v, x, zero(T))
 end
 
 
@@ -463,18 +469,20 @@ tensor4(A::SMatrix{3, 3, T, 9}, B::SMatrix{3, 3, T, 9}) where {T} =
 
 
 
-function force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, T)
-  F_sum = zero(SVector{3, T})
-  M_sum = zero(SVector{3, T})
+function force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
+  S = promote_type(eltype(mean_v), eltype(torque_point), typeof(std_v), typeof(domain_radius), Float64)
+
+  F_sum = zero(SVector{3, S})
+  M_sum = zero(SVector{3, S})
   
-  dF_v_sum = zero(SMatrix{3, 3, T, 9})
-  dM_v_sum = zero(SMatrix{3, 3, T, 9})
+  dF_v_sum = zero(SMatrix{3, 3, S, 9})
+  dM_v_sum = zero(SMatrix{3, 3, S, 9})
 
-  F²_sum = zero(SMatrix{3, 3, T, 9})
-  M²_sum = zero(SMatrix{3, 3, T, 9})
+  F²_sum = zero(SMatrix{3, 3, S, 9})
+  M²_sum = zero(SMatrix{3, 3, S, 9})
 
-  dF_v²_sum = zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81})
-  dM_v²_sum = zero(SArray{Tuple{3, 3, 3, 3}, T, 4, 81})
+  dF_v²_sum = zero(SArray{Tuple{3, 3, 3, 3}, S, 4, 81})
+  dM_v²_sum = zero(SArray{Tuple{3, 3, 3, 3}, S, 4, 81})
   
   missed_sum = zero(Int)
 
@@ -518,48 +526,46 @@ function force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, 
     dM_v²_sum += tensor4(Δdm_v, Δdm_v)
   end
 
-  N_hit  = T(sample_size)
-  N_miss = T(missed_sum)
+  N_hit  = S(sample_size)
+  N_miss = S(missed_sum)
   
   return (;F_sum, M_sum, dF_v_sum, dM_v_sum, F²_sum, M²_sum, dF_v²_sum, dM_v²_sum, N_hit, N_miss)
 end
 
 
-function force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, T, parallel)
+function force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, parallel)
   if parallel
+    S = promote_type(eltype(mean_v), eltype(torque_point), typeof(std_v), typeof(domain_radius), Float64)
     number_of_threads = Threads.nthreads(:default)
-    #number_of_chunks = number_of_threads
     number_of_chunks = number_of_threads * round(Int, log(3 + sample_size))
     base_chunk_size, remainder = divrem(sample_size, number_of_chunks)
     
-    # parallel_force_and_torque_sums = Array{Any, 1}(undef, number_of_chunks)
     parallel_force_and_torque_sums = Vector{
       NamedTuple{
         (:F_sum, :M_sum, :dF_v_sum, :dM_v_sum, :F²_sum, :M²_sum, :dF_v²_sum, :dM_v²_sum, :N_hit, :N_miss),
         Tuple{
-          SVector{3, T},
-          SVector{3, T},
-          SMatrix{3, 3, T, 9},
-          SMatrix{3, 3, T, 9},
-          SMatrix{3, 3, T, 9},
-          SMatrix{3, 3, T, 9},
-          SArray{Tuple{3, 3, 3, 3}, T, 4, 81},
-          SArray{Tuple{3, 3, 3, 3}, T, 4, 81},
-          T,
-          T,
+          SVector{3, S},
+          SVector{3, S},
+          SMatrix{3, 3, S, 9},
+          SMatrix{3, 3, S, 9},
+          SMatrix{3, 3, S, 9},
+          SMatrix{3, 3, S, 9},
+          SArray{Tuple{3, 3, 3, 3}, S, 4, 81},
+          SArray{Tuple{3, 3, 3, 3}, S, 4, 81},
+          S,
+          S,
         },
       }
     }(undef, number_of_chunks)
 
     @threads for i in collect(eachindex(parallel_force_and_torque_sums))
       chunk_sample_size = base_chunk_size + (i <= remainder)
-      parallel_force_and_torque_sums[i] = force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size = chunk_sample_size, T)
+      parallel_force_and_torque_sums[i] = force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size = chunk_sample_size)
     end
     
-    field_names  = keys(parallel_force_and_torque_sums[1])
-    return (; (name => sum(d[name] for d in parallel_force_and_torque_sums) for name in field_names)...)
+    return reduce((a, b) -> map(+, a, b), parallel_force_and_torque_sums)
   else
-    return force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, T)
+    return force_and_torque_sums_uniform_flow_serial(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size)
   end
 end
 
@@ -587,7 +593,7 @@ Arguments:
 - `std_v`: isotropic velocity standard deviation used by [`sample_particle_state_uniform_flow`](@ref).
 - `max_collisions`: maximum number of successive collisions tracked for each particle (including the first).
 - `domain_radius`: radius of the spherical simulation domain centered at ``(0, 0, 0)`` that fully contains `body`.
-- `sample_size`: number of *colliding* particles (hits) used in the Monte Carlo estimator.
+- `sample_size`: number of *colliding* particles (hits) used in the Monte Carlo estimator; must be at least 2.
 - `parallel`: if `true`, use [Julia multi-threading](https://docs.julialang.org/en/v1/base/multi-threading/) to evaluate samples in parallel.
 
 Returns a named tuple `(F, M, dF_v, dM_v, P_hit, ΣF, ΣM, ΣdF_v, ΣdM_v, ΣP_hit)` with the following Monte Carlo estimates:
@@ -606,6 +612,7 @@ Notes:
 - Particles are generated by repeatedly sampling from [`sample_particle_state_uniform_flow`](@ref) until a collision occurs;
   thus `sample_size` counts hits, while `P_hit` is inferred from the total number of misses encountered along the way.
 - The covariances (all the `Σ`'s) are computed as described in the [development tips](development.md).
+- The global random number generator is used. With `Random.seed!`, results are reproducible only for the same value of `parallel` and, if `parallel = true`, the same number of threads.
 
 # Example
 
@@ -626,9 +633,10 @@ force_and_torque_uniform_flow(
 ```
 """
 function force_and_torque_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, parallel = false)
-  T = promote_type(eltype(mean_v), eltype(torque_point), typeof(std_v), typeof(domain_radius))
+  T = float(promote_type(eltype(mean_v), eltype(torque_point), typeof(std_v), typeof(domain_radius)))
+  mean_v, torque_point = SVector{3, T}(mean_v), SVector{3, T}(torque_point)
 
-  d = force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, T, parallel)
+  d = force_and_torque_sums_uniform_flow(;body, torque_point, mean_v, std_v, max_collisions, domain_radius, sample_size, parallel)
   
   P_hit  = (d.N_hit - 1) / (d.N_miss + d.N_hit - 1)
   ΣP_hit = P_hit^2 * (1 - P_hit) / d.N_hit

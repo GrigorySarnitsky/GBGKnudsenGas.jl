@@ -4,7 +4,7 @@ We provide a concrete and complete example of how to use `GBGKnudsenGas.jl` to b
 
 ## Epstein drag
 
-Consider a stationary flow of a Knudsen gas past a sphere with collisions following the [Maxwell reflection law.](https://doi.org/10.1146/annurev-fluid-121021-014808) The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages, and primes ${\cdot}'$ denote the corresponding fluctuations. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
+Consider a stationary flow of a Knudsen gas past a sphere with collisions following the [Maxwell reflection law.](https://doi.org/10.1098/rstl.1879.0067) The gas is at thermal equilibrium, with unperturbed (at infinity) temperature $T$, density $\rho$, and mean velocity $\langle \boldsymbol v_0 \rangle$. Angle brackets $\langle {\cdot} \rangle$ denote ensemble averages. Before colliding with the body, the initial particle velocity $ \boldsymbol v_0$ follows the Maxwell–Boltzmann probability density function
 
 ```math
 f(\boldsymbol v_0) = \frac{1}{(\sqrt{2 \pi \sigma_v^2})^3} \exp \biggl[- \frac{(\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle) \cdot (\boldsymbol v_0 - \langle \boldsymbol v_0 \rangle)}{2 \sigma_v^2}\biggr],
@@ -39,16 +39,16 @@ f_\text{diff}(\boldsymbol v) = \left\{
 \end{aligned}\right.
 ```
 
-Let $\boldsymbol F$ be the force that the flowing gas exerts on the sphere and $r$ be the radius of the sphere. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $F_\text{drag}$ is
+Let $\boldsymbol F$ be the force that the flowing gas exerts on the sphere and $r$ be the radius of the sphere. In the limit of small Mach numbers, $\text{Ma} \ll 1$, the Epstein (1924) expression for $\boldsymbol F$ is
 
 ```math
 \boldsymbol F_\text{Epstein (1924)}
 = \biggl(1 + \frac{\pi}{8} \alpha \frac{\sigma_{v_\text{wall}}}{\sigma_v} \biggr) \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle,
 ```
 
-see the papers
+see the papers below. There the wall has the temperature of the gas, $\sigma_{v_\text{wall}} = \sigma_v$; for a wall at a different temperature see Baines et al. (1965), cited below.
 
-* Epstein, Paul S. (1924). "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23(6), 710, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
+* Epstein, Paul S. (1924). "On the resistance experienced by spheres in their motion through gases." _Physical Review,_ 23(6), 710–733, [10.1103/PhysRev.23.710](https://doi.org/10.1103/PhysRev.23.710).
 * Li, Zhigang, and Wang, Hai (2003). "Drag force, diffusion coefficient, and electric mobility of small particles. I. Theory applicable to the free-molecule regime." _Physical Review E,_ 68(6), 061206, [10.1103/PhysRevE.68.061206](https://doi.org/10.1103/PhysRevE.68.061206).
 
 For arbitrary Mach numbers, the exact formula for $\boldsymbol F$ was derived by Baines et al. (1965):
@@ -61,22 +61,23 @@ For arbitrary Mach numbers, the exact formula for $\boldsymbol F$ was derived by
 \end{aligned}
 ```
 with $\psi = \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sqrt 2 \sigma_v}$, see the original paper
-* Baines, M. J., Williams, I. P., Asebiomo, A. S., & Agacy, R. L. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
+* Baines, M. J., Williams, I. P., & Asebiomo, A. S. (1965). "Resistance to the motion of a small sphere moving through a gas." _Monthly Notices of the Royal Astronomical Society,_ 130(1), 63–74, [10.1093/mnras/130.1.63](https://doi.org/10.1093/mnras/130.1.63).
 
-Later, a good approximation for $F_\text{drag}$ was given by Kwok (1975), for specular collisions:
+A convenient approximation interpolates between the limits of low and high speed, following the form proposed by Kwok (1975):
 
 ```math
-\boldsymbol F_\text{Kwok (1975)} = \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } \, \boldsymbol F_\text{Epstein (1924)},
+\boldsymbol F_\text{Kwok (1975)} = \Biggl[ \sqrt{1 + \frac{9\pi}{128} \biggr( \frac{\| \langle \boldsymbol v_0 \rangle \|}{\sigma_v} \biggr)^{\!2} } + \frac{\pi}{8} \alpha \frac{\sigma_{v_\text{wall}}}{\sigma_v} \Biggr] \frac{8}{3} \sqrt{2 \pi} \sigma_v \rho r^2 \langle \boldsymbol v_0 \rangle.
 ```
 
-see the papers
-* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics–II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x)
-* Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198(6??), 583, [10.1086/153637](https://doi.org/10.1086/153637).
+The coefficient $9\pi/128$ is fixed by the two limits of the specular part: it reduces to the Epstein drag at low speed and to $\pi r^2 \rho \| \langle \boldsymbol v_0 \rangle \| \langle \boldsymbol v_0 \rangle$ at high speed. The diffuse part is linear in $\langle \boldsymbol v_0 \rangle$ at any speed and is added unchanged, as in the exact formula above. For any $\alpha$ and any speed the approximation deviates from the exact formula by at most 1.5 %. See the papers
+
+* Kwok, Sun (1975). "Radiation pressure on grains as a mechanism for mass loss in red giants." _Astrophysical Journal,_ 198, 583–591, [10.1086/153637](https://doi.org/10.1086/153637).
+* Laibe, Guillaume, and Price, Daniel J. (2012). "Dusty gas with smoothed particle hydrodynamics – II. Implicit timestepping and astrophysical drag regimes." _Monthly Notices of the Royal Astronomical Society,_ 420(3), 2365–2376, [10.1111/j.1365-2966.2011.20201.x](https://doi.org/10.1111/j.1365-2966.2011.20201.x). Their Eq. (17) has the form of the specular part, written with the speed of sound in place of $\sigma_v$.
 
 
 ## Monte Carlo calculation of Epstein drag with `GBGKnudsenGas.jl`
 
-The full code of this computation is available in `examples/epstein_drag.jl`. This is a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For more advanced code for simulating the same flow, see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md) For simplicity, below we study only specular collisions, $\alpha = 0$.
+The full code of this computation is available in `examples/epstein_sphere.jl`. This is a conceptual outline of using `GBGKnudsenGas.jl` for custom flow setups. For more advanced code for simulating the same flow, see the source of [`force_and_torque_uniform_flow`](@ref) as well as our [development tips.](development.md) For simplicity, below we study only specular collisions, $\alpha = 0$.
 
 ### Computing $\boldsymbol F$
 
@@ -94,7 +95,7 @@ The calculation of $\boldsymbol F$ is based on the statistics of the velocity in
 ```math
 \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) = \boldsymbol v_\infty - \boldsymbol v_0
 ```
-Recall from the [introduction,](index.md) that
+Recall from the [usage page,](usage.md) that
 
 ```math
 \boldsymbol F = - \rho  \pi r_\text{dom}^2 \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigr>,
@@ -102,7 +103,7 @@ Recall from the [introduction,](index.md) that
 
 with $r_\text{dom}$ being the radius of the domain that fully encloses the sphere.
 
-The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using [`sample_particle_state_uniform_flow`](@ref). Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $|\boldsymbol F|$ using the average conditioned on a collision:
+The ensemble average is taken over particles whose initial states ($\boldsymbol v_0$ and $\boldsymbol x_0$) are sampled using [`sample_particle_state_uniform_flow`](@ref). Let $P(\text{hit})$ denote the probability that a particle collides with the body. Then we can rewrite the expression for $\boldsymbol F$ using the average conditioned on a collision:
 
 ```math
 \boldsymbol F = - \rho  \pi r_\text{dom}^2 P(\text{hit}) \bigl< \| \boldsymbol v_0 \| \Delta \boldsymbol v(\boldsymbol v_0, \boldsymbol x_0) \bigm| \text{hit} \bigr> .
@@ -113,7 +114,7 @@ To evaluate this conditional average, we first define a helper function `find_si
 - the body (`body`),
 - the mean velocity $\langle \boldsymbol v_0 \rangle$ (`mean_v`),
 - the velocity standard deviation $\sigma_v$ (`std_v`),
-- the simulation domain radius $r_\text{dom}$ (`domain_radius`), see the [introduction.](index.md)
+- the simulation domain radius $r_\text{dom}$ (`domain_radius`), see the [usage page.](usage.md)
 
 We later call this function with `epstein_sphere` as the body and $r_\text{dom} = 2$.
 
